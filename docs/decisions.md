@@ -434,10 +434,12 @@ Cette section est tenue à jour par chaque lot, dans son emplacement.
   mon IA, Ma montre connectée), Aide (Prompts à copier, Mises à jour). Chaque ligne ouvre son écran.
   Mon profil, Mon poids et Mes badges sont sur Moi.
 - **Apparence** : les 3 thèmes avec l'aperçu de leur décor d'Aujourd'hui (voir « Thèmes »).
-- **Fond photo** : composant `PhotoBackground(onglet, thème)` (ui/PhotoBackground.kt). La photo couvre le haut
-  de l'écran derrière les cartes, défile avec le contenu et se fond dans la couleur de fond ; les titres posés
+- **Fond photo** : composant `PhotoBackground(onglet, thème)` (ui/PhotoBackground.kt). La photo (recadrée « cover »,
+  centrée en haut) couvre les **1040 dp du haut du contenu** derrière les cartes, comme le prototype, défile
+  avec lui et se fond dans la couleur de fond (voile 0,38, 0,18 à 22 %, 0,52 à 55 %, puis couleur de fond) ;
+  `Modifier.photoBackdrop` la dessine derrière une liste (Repas) ; les titres posés
   dessus sont blancs avec une ombre douce (`PhotoTitle`). 12 décors, 4 par thème (Aujourd'hui, Repas, Sport,
-  Santé ; Moi n'en a pas), en WebP 720 × 960 dans `res/drawable-nodpi` (environ 1 Mo en tout, un test vérifie
+  Santé ; Moi n'en a pas), en WebP 960 × 1280 dans `res/drawable-nodpi` (environ 1,3 Mo en tout, un test vérifie
   moins de 3 Mo). Cartes opaques à coins de 28 dp, police Nunito.
 - Les écrans Aujourd'hui, Repas et Sport gardent leur en-tête actuel jusqu'à leur lot, qui adopte le fond photo.
   Santé et Moi sont des **coquilles** (raccourcis vers les écrans déjà là : Ma montre, Mon eau, Mon profil,

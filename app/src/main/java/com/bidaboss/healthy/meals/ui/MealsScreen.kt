@@ -79,7 +79,7 @@ import com.bidaboss.healthy.ui.color
 import com.bidaboss.healthy.ui.formatGrams
 import com.bidaboss.healthy.ui.formatKcal
 import com.bidaboss.healthy.ui.healthyViewModelFactory
-import com.bidaboss.healthy.ui.PhotoBackground
+import com.bidaboss.healthy.ui.photoBackdrop
 import com.bidaboss.healthy.ui.PhotoTab
 import com.bidaboss.healthy.ui.PhotoTitle
 import kotlinx.coroutines.launch
@@ -170,7 +170,12 @@ fun MealsScreen(
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
-    Box(modifier = modifier.fillMaxSize()) {
+    // Photo derrière toute la liste, comme sur les autres onglets : elle suit le défilement de la liste.
+    Box(
+        modifier = modifier.fillMaxSize().photoBackdrop(PhotoTab.MEALS) {
+            if (listState.firstVisibleItemIndex == 0) listState.firstVisibleItemScrollOffset else Int.MAX_VALUE
+        },
+    ) {
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
@@ -178,7 +183,7 @@ fun MealsScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item(key = "header") {
-                PhotoBackground(PhotoTab.MEALS, photoHeight = 300.dp) {
+                Box {
                     Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp)) {
                         PhotoTitle("Repas", modifier = Modifier.padding(start = 8.dp, top = 8.dp))
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

@@ -239,6 +239,15 @@ protège donc aussi cette voie. Vérification silencieuse à chaque retour au pr
 Le lien est `UPDATE_FOLDER_LINK` : un secret de GitHub Actions injecté au build (variable d'environnement lue par `app/build.gradle.kts`), donc absent du dépôt ; sans lui (build local) il est vide et l'app dit qu'aucun dossier n'est configuré. Il n'est ni affiché ni modifiable dans l'app. Seuls les
 messages d'erreur écrits par l'app (`UpdateException`) sont montrés, jamais ceux du système, qui
 peuvent contenir l'adresse du dossier.
+
+**Publication automatique** (choix du propriétaire, 23/11/2026, même méthode que son projet Familia). Après un push sur
+`main`, l'étape « Déposer l'APK sur le Drive » du workflow lance `scripts/publish-apk.mjs`. Un compte de service Google
+(secret `DRIVE_SERVICE_ACCOUNT_JSON`, donné à cette seule étape) est Éditeur du dossier. Il n'a pas d'espace Drive : il ne
+peut pas créer de fichier, seulement remplacer le contenu de l'APK au plus grand numéro, puis le renommer
+`healthy-<numéro>.apk`. Le propriétaire a donc déposé une première fois un APK à la main. Le lien du dossier ne change pas
+et reste secret. Sans le secret, l'étape est sautée (le CI reste vert) ; elle échoue si le dossier n'a pas de
+`healthy-<numéro>.apk` ou si le numéro n'est pas plus récent. Les autres APK du dossier ne sont pas touchés.
+
 Téléchargement limité à 100 Mo. L'heure de la vérification automatique n'est notée qu'après une
 vérification réussie : sans réseau, on réessaie au retour suivant. « Plus tard » met la version de côté
 24 h (`UpdateStore.snoozedVersionCode`) ; le bouton de Réglages la montre toujours.

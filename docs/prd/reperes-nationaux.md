@@ -73,7 +73,12 @@ Le propriétaire et ses proches (saisie manuelle : les repères sont indicatifs 
 
 Précisions : l'objectif de fibres de l'app (30 g) et de protéines (1,6 g/kg) reste un **objectif de l'app**, affiché à côté du repère officiel (25 g, 0,83 g/kg), jamais à sa place. L'eau EFSA inclut celle des aliments : le repère est comparé à l'eau bue **avec une mention** qu'il est plus large.
 
-**Non trouvés** : durée de sommeil et pas par jour officiels (tendance affichée sans zone).
+**Vérifié, Santé publique France (page Sommeil, lue en 2026)**
+| Repère | Valeur | Source |
+|---|---|---|
+| Sommeil | 7 heures minimum par nuit pour les adultes de 18 à 64 ans ; moyenne observée en France 7 h 32 (18-79 ans, 2024) | Santé publique France |
+
+**Non trouvé** : pas par jour officiels (tendance affichée sans zone).
 
 ---
 

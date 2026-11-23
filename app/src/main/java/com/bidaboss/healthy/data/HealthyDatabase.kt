@@ -82,7 +82,7 @@ abstract class HealthyDatabase : RoomDatabase() {
 
     companion object {
         /** Version du schéma. L'augmenter impose d'ajouter une migration dans [Migrations]. */
-        const val VERSION = 16
+        const val VERSION = 17
 
         fun create(context: Context): HealthyDatabase =
             Room.databaseBuilder(context, HealthyDatabase::class.java, "healthy.db")

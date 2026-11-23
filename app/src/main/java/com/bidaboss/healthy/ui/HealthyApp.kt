@@ -50,7 +50,7 @@ import com.bidaboss.healthy.settings.ui.SettingsDetailScreen
 import com.bidaboss.healthy.settings.ui.SettingsScreen
 import com.bidaboss.healthy.settings.ui.SettingsSection
 import com.bidaboss.healthy.health.ui.HealthScreen
-import com.bidaboss.healthy.health.ui.WatchTrendsScreen
+import com.bidaboss.healthy.health.ui.HealthSection
 import com.bidaboss.healthy.today.ui.BadgesScreen
 import com.bidaboss.healthy.today.ui.TodayScreen
 import com.bidaboss.healthy.today.ui.WaterScreen
@@ -255,11 +255,18 @@ private fun MainNavigation(
             // ── LOT 4 : Santé et Moi ──
             composable(Routes.HEALTH) {
                 HealthScreen(
-                    onOpenWatch = { navController.navigate(Routes.WATCH) { launchSingleTop = true } },
                     onOpenWater = { navController.navigate(Routes.WATER) { launchSingleTop = true } },
+                    onOpenRecap = { navController.navigate(Routes.WEEKLY_RECAP) { launchSingleTop = true } },
                 )
             }
-            composable(Routes.WATCH) { WatchTrendsScreen(onClose = { navController.popBackStack() }) }
+            // « Ma montre » d'Aujourd'hui et de Sport ouvre Santé sur la partie Montre.
+            composable(Routes.WATCH) {
+                HealthScreen(
+                    onOpenWater = { navController.navigate(Routes.WATER) { launchSingleTop = true } },
+                    onOpenRecap = { navController.navigate(Routes.WEEKLY_RECAP) { launchSingleTop = true } },
+                    initialSection = HealthSection.WATCH,
+                )
+            }
             // ── LOT 1 : Aujourd'hui ──
             composable(Routes.WATER) { WaterScreen(onClose = { navController.popBackStack() }) }
             composable(Routes.BADGES) { BadgesScreen(onClose = { navController.popBackStack() }) }

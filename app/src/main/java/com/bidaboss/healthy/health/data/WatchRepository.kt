@@ -26,6 +26,8 @@ class WatchRepository(
 
     suspend fun extrasGranted(): Boolean = runCatching { source.extrasGranted() }.getOrDefault(false)
 
+    suspend fun distanceGranted(): Boolean = runCatching { source.distanceGranted() }.getOrDefault(false)
+
     /**
      * La journée de [today] et les séances des [RECENT_DAYS] derniers jours : au moins [MIN_SESSION_MIN]
      * minutes (une marche de 3 minutes n'est pas une séance), pas écartées par le propriétaire, les plus récentes d'abord.

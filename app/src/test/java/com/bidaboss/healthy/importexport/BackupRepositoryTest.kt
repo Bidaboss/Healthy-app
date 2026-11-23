@@ -184,4 +184,28 @@ class BackupRepositoryTest {
         backups(other).restore(exported)
         assertEquals(140, BodyRepository(other.bodyDao()).observeProfile().first()!!.maintenanceAdjustmentKcal)
     }
+
+    @Test
+    fun `une sauvegarde d'avant la refonte restaure les releves de la montre sans distance ni nuit detaillee`() = runBlocking {
+        val old = BackupContent(
+            databaseVersion = 14,
+            tables = mapOf(
+                "watch_days" to listOf(
+                    mapOf("local_date" to "2026-11-22", "steps" to 8000L, "active_kcal" to null, "sleep_min" to 430L,
+                        "avg_bpm" to null, "min_bpm" to null, "updated_at_epoch_ms" to 1L),
+                ),
+            ),
+        )
+        val db = newDatabase()
+        backups(db).restore(old)
+        val row = db.watchDayDao().get("2026-11-22")!!
+        assertEquals(430, row.sleepMin)
+        assertEquals(null, row.distanceM)
+        assertEquals(null, row.sleepStages)
+        // Un relevé complet part dans la sauvegarde et revient.
+        db.watchDayDao().upsert(row.copy(distanceM = 6200, sleepStart = "2026-11-21T23:10", sleepEnd = "2026-11-22T06:40", sleepStages = "L45,D30"))
+        val other = newDatabase()
+        backups(other).restore(parse(backups(db).export()))
+        assertEquals("L45,D30", other.watchDayDao().get("2026-11-22")!!.sleepStages)
+    }
 }

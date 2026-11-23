@@ -508,9 +508,40 @@ Cette section est tenue à jour par chaque lot, dans son emplacement.
 - Base v16 : table `saved_routes`, colonnes `route_id`, `route_name`,
   `route_direction` et `distance_km` sur `activities`.
 
-### Lot 4 : Santé et Moi
+### Lot 4 : Santé et Moi (migration v17)
 
-(à remplir par le lot 4)
+- **Santé** (fond photo) a quatre parties : **7 jours** (par défaut), **Sommeil**, **Montre**, **Bilan**. Une partie
+  de plus ne s'ouvre que depuis ses liens : la carte Eau de 7 jours ouvre l'écran Eau ; « Ma montre » d'Aujourd'hui
+  (route `watch`) ouvre Santé sur Montre.
+- **7 jours** : une carte par mesure (calories, eau, sport, pas, sommeil), avec la moyenne et 7 barres, une par jour,
+  la lettre du jour dessous. Un jour sans rien noté est un **trou** (petit trait), jamais un zéro, et ne compte pas dans
+  la moyenne (« sur N jours notés »). Sport : séances du plan et activités, barres en minutes.
+- **Sommeil** (montre connectée seulement) : la dernière nuit reçue (durée, heures coucher → réveil, frise des phases,
+  durées par phase, endormissement, réveil, nombre de réveils, cœur moyen et plus bas pendant la nuit, régularité du
+  coucher = écart-type des heures de coucher, à partir de 3 nuits), puis les 7 dernières nuits. **On ne montre que ce
+  que la montre envoie** : sans phases, ni frise ni durées de phases ; sans cœur de nuit, pas de ligne cœur. Aucun seuil,
+  aucun jugement. Les réveils comptent les passages « éveillé » entre deux phases de sommeil, pas l'endormissement
+  ni le lever.
+- **Montre** (montre connectée seulement) : la journée la plus récente (calories brûlées, pas, distance, sommeil, cœur),
+  puis les tendances de « Ma montre » (7 ou 30 jours, voir plus haut), avec un bloc **Distance** quand la montre en envoie.
+- **Bilan** : le résumé de la semaine (sport, série, Pousse, badge), **sans donnée de santé** : rien sur les calories,
+  le poids ni la santé. Il ouvre le bilan plein écran, qui le partage en image.
+- **Sans montre connectée** (ni lecture possible, ni historique gardé) : Sommeil et Montre disparaissent, les cartes
+  Pas et Sommeil de 7 jours sont masquées, une carte « Ajouter une montre » invite à la connecter (lecture seule, rien ne
+  quitte le téléphone). Si l'autorisation est retirée mais qu'un historique existe, la montre compte comme connectée.
+- **Stress, score de sommeil Garmin, Batterie corporelle et SpO2** ne passent pas par Health Connect : ils ne sont
+  **jamais affichés**. La distance (permission `READ_DISTANCE`, facultative) et les phases de sommeil sont lues si Garmin
+  Connect les écrit ; **à confirmer sur le téléphone** (Paramètres, Health Connect, Accès aux données, Garmin Connect).
+  Une ancienne connexion sans la permission distance propose « Ajouter la distance », rien ne casse.
+- **Données** : `watch_days` gagne `distance_m`, `sleep_start`, `sleep_end`, `sleep_stages` (« L45,D30,R20,A5 » : phase
+  et minutes, dans l'ordre de la nuit), `night_avg_bpm`, `night_min_bpm`, tous facultatifs (migration 16 → 17, avec test).
+  Comme les autres mesures, une mesure absente ne remplace jamais une mesure déjà gardée. Tout est dans la sauvegarde
+  (une ancienne sauvegarde se restaure, ces colonnes vides).
+- **Moi** (sans photo de fond) : **profil** (Pousse selon la série, prénom, âge et taille, maintien estimé, « ajusté d'après
+  tes repas et tes pesées » si un ajustement est adopté) ; **Mon poids** (dernière pesée, courbe de la moyenne sur 7 jours,
+  maintien estimé, « + Pesée » qui ouvre la saisie du jour sans changer d'écran, « Toutes mes pesées » pour l'historique) ;
+  **Mes badges** (nombre débloqués, derniers badges, prochain à gagner). Chaque carte ouvre son écran complet.
+- La distance du jour arrive pour le lot 1 : `WatchDay.distanceM` (lecture) et `WatchDayRecord.distanceM` (historique).
 
 ### Lot 5 : mascotte Pousse
 

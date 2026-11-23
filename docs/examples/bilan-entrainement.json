@@ -1,0 +1,70 @@
+{
+  "format": "healthy-import",
+  "schema_version": 1,
+  "type": "training_report",
+  "id": "7c1d9e42-5b3a-4f8e-a6d2-0e9f8b7c6a51",
+  "created_at": "2026-11-11T19:05:00",
+  "report": {
+    "period_start": "2026-10-15",
+    "period_end": "2026-11-11",
+    "sessions": [
+      {
+        "started_at": "2026-11-09T18:30:00",
+        "plan_name": "Remise en forme maison",
+        "session_title": "Haut du corps",
+        "planned_duration_min": 30,
+        "actual_duration_min": 27,
+        "feeling": "ok",
+        "exercises": [
+          {
+            "name": "Pompes sur les genoux",
+            "planned_sets": 3,
+            "planned_reps": 10,
+            "done_reps": [10, 10, 8],
+            "skipped": false
+          },
+          {
+            "name": "Planche",
+            "planned_sets": 2,
+            "planned_duration_s": 30,
+            "done_duration_s": [30, 22],
+            "skipped": false
+          }
+        ]
+      },
+      {
+        "started_at": "2026-11-11T18:00:00",
+        "plan_name": "Remise en forme maison",
+        "session_title": "Bas du corps",
+        "planned_duration_min": 15,
+        "actual_duration_min": 9,
+        "feeling": "trop_dur",
+        "pain_zone": "adducteur droit",
+        "exercises": [
+          {
+            "name": "Squats",
+            "planned_sets": 2,
+            "planned_reps": 12,
+            "done_reps": [12],
+            "skipped": true
+          },
+          {
+            "name": "Pont fessier",
+            "planned_sets": 2,
+            "planned_reps": 15,
+            "done_reps": [],
+            "skipped": false
+          }
+        ]
+      }
+    ],
+    "activities": [
+      {
+        "date": "2026-11-08",
+        "type": "Marche",
+        "duration_min": 45,
+        "body_parts": ["legs", "cardio"]
+      }
+    ]
+  }
+}

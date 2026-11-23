@@ -1,0 +1,24 @@
+{
+  "format": "healthy-import",
+  "schema_version": 1,
+  "type": "backup",
+  "id": "5d9a1c3e-2b7f-4e8a-9c1d-3e5f7a9b1c2d",
+  "created_at": "2026-11-11T18:00:00",
+  "backup": {
+    "database_version": 4,
+    "tables": {
+      "meals": [
+        {"id": 1, "import_id": null, "eaten_at_epoch_ms": 1762858800000, "local_date": "2026-11-11", "meal_type": "dejeuner", "title": "Riz et poulet", "notes": null, "created_at_epoch_ms": 1762858900000}
+      ],
+      "meal_items": [
+        {"id": 1, "meal_id": 1, "position": 0, "name": "Riz cuit", "quantity_g": 150.0, "portion": null, "kcal": 195.0, "protein_g": 4.0, "carbs_g": 42.5, "fat_g": null, "fiber_g": null, "source": "manuel", "confidence": null, "assumptions": null, "off_code": null}
+      ],
+      "profile": [
+        {"id": 1, "first_name": "Alex", "sex": "homme", "birth_date": "1988-07-15", "height_cm": 176.0, "weight_kg": 75.0, "activity": "actif", "goal": "maintien", "updated_at_epoch_ms": 1762858900000}
+      ],
+      "weigh_ins": [
+        {"id": 1, "local_date": "2026-11-11", "weight_kg": 79.6, "waist_cm": 88.0, "created_at_epoch_ms": 1762837200000}
+      ]
+    }
+  }
+}

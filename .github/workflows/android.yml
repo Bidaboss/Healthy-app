@@ -1,0 +1,90 @@
+name: Android
+
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Tests du format d'import
+        run: ./gradlew :core:test
+
+      # La clé de signature et le lien du dossier Drive sont des secrets du dépôt (Settings > Secrets and
+      # variables > Actions), pas des fichiers : le keystore est recréé ici, dans un dossier temporaire.
+      - name: Recréer la clé de signature
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64" || { echo "::error::Secret ANDROID_KEYSTORE_BASE64 absent."; exit 1; }
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/healthy.jks"
+          echo "HEALTHY_KEYSTORE_FILE=$RUNNER_TEMP/healthy.jks" >> "$GITHUB_ENV"
+
+      - name: Tests, lint et APK
+        env:
+          HEALTHY_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          HEALTHY_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          HEALTHY_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          UPDATE_FOLDER_LINK: ${{ secrets.UPDATE_FOLDER_LINK }}
+        run: ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleRelease
+
+      - name: Vérifier que le schéma de la base est versionné
+        if: ${{ !cancelled() }}
+        run: |
+          git add -N app/schemas
+          if ! git diff --exit-code -- app/schemas; then
+            echo "::error::Le schéma Room a changé : committer app/schemas (et écrire une migration si la version change)."
+            exit 1
+          fi
+
+      # L'empreinte attendue est publique (elle ne permet pas de signer) : elle est écrite ici pour que
+      # l'APK soit refusé si les secrets contiennent une autre clé que celle des téléphones installés.
+      - name: Vérifier la signature de l'APK
+        env:
+          EXPECTED_SHA256: 410bc735c1e2d3184055ddd33735c872306998eefeb00440f7f78f1868694186
+        run: |
+          apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          actual=$("$apksigner" verify --print-certs app/build/outputs/apk/release/*.apk \
+            | grep 'certificate SHA-256' | head -1 | awk '{print $NF}')
+          echo "attendu : $EXPECTED_SHA256"; echo "obtenu  : $actual"
+          test -n "$actual" && test "$EXPECTED_SHA256" = "$actual"
+
+      # Nom avec le numéro de build : l'app s'en sert pour savoir si le fichier déposé dans le
+      # dossier Drive des mises à jour est plus récent (voir docs/architecture.md, « Mises à jour »).
+      - name: Nommer l'APK avec son numéro
+        run: mv app/build/outputs/apk/release/app-release.apk "app/build/outputs/apk/release/healthy-${GITHUB_RUN_NUMBER}.apk"
+
+      - name: Publier l'APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: healthy-apk
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+      - name: Publier le schéma de la base et le rapport lint
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapports
+          path: |
+            app/schemas/
+            app/build/reports/
+          if-no-files-found: ignore

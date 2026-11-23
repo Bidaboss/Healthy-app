@@ -1,0 +1,17 @@
+*.iml
+.gradle/
+/local.properties
+.idea/
+.DS_Store
+build/
+/captures
+.externalNativeBuild
+.cxx
+.kotlin/
+# Aucune clé de signature dans le dépôt : elle vit dans les secrets de GitHub Actions
+# (voir docs/architecture.md, « Signature de l'APK »).
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+/app/signing/

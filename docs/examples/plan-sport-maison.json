@@ -1,0 +1,300 @@
+{
+  "format": "healthy-import",
+  "schema_version": 1,
+  "type": "workout_plan",
+  "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+  "created_at": "2026-11-11T14:00:00+01:00",
+  "plan": {
+    "name": "Forme générale à la maison",
+    "description": "3 séances par semaine au poids du corps. Chaque séance existe en 15, 30 et 45 minutes.",
+    "weeks": 4,
+    "sessions": [
+      {
+        "title": "Séance A - Haut du corps et gainage",
+        "day_of_week": 1,
+        "variants": [
+          {
+            "duration_min": 15,
+            "warm_up": "2 minutes : rotations des bras.",
+            "cool_down": "Étirements des épaules, 1 minute.",
+            "exercises": [
+              {
+                "name": "Pompes",
+                "sets": 2,
+                "reps": 10,
+                "rest_s": 60,
+                "instructions": "Mains sous les épaules, corps gainé, descendre la poitrine près du sol.",
+                "easier_variant": "Pompes genoux au sol",
+                "harder_variant": "Pompes pieds surélevés"
+              },
+              {
+                "name": "Planche",
+                "sets": 2,
+                "duration_s": 30,
+                "rest_s": 45
+              }
+            ]
+          },
+          {
+            "duration_min": 30,
+            "warm_up": "5 minutes : rotations des bras, jumping jacks.",
+            "cool_down": "Étirements des épaules et du dos, 3 minutes.",
+            "exercises": [
+              {
+                "name": "Pompes",
+                "sets": 3,
+                "reps": 10,
+                "rest_s": 60,
+                "instructions": "Mains sous les épaules, corps gainé, descendre la poitrine près du sol.",
+                "easier_variant": "Pompes genoux au sol",
+                "harder_variant": "Pompes pieds surélevés",
+                "video_url": "https://www.youtube.com/results?search_query=pompes+exercice",
+                "easier_video_url": "https://www.youtube.com/results?search_query=pompes+genoux+au+sol",
+                "harder_video_url": "https://www.youtube.com/results?search_query=pompes+pieds+sur%C3%A9lev%C3%A9s"
+              },
+              {
+                "name": "Dips sur chaise",
+                "sets": 3,
+                "reps": 12,
+                "rest_s": 60
+              },
+              {
+                "name": "Planche",
+                "sets": 3,
+                "duration_s": 40,
+                "rest_s": 45
+              }
+            ]
+          },
+          {
+            "duration_min": 45,
+            "warm_up": "5 minutes : rotations des bras, jumping jacks.",
+            "cool_down": "Étirements des épaules et du dos, 5 minutes.",
+            "exercises": [
+              {
+                "name": "Pompes",
+                "sets": 4,
+                "reps": 12,
+                "rest_s": 60,
+                "instructions": "Mains sous les épaules, corps gainé, descendre la poitrine près du sol.",
+                "easier_variant": "Pompes genoux au sol",
+                "harder_variant": "Pompes pieds surélevés"
+              },
+              {
+                "name": "Dips sur chaise",
+                "sets": 4,
+                "reps": 12,
+                "rest_s": 60
+              },
+              {
+                "name": "Pompes diamant",
+                "sets": 3,
+                "reps": 8,
+                "rest_s": 60,
+                "easier_variant": "Genoux au sol"
+              },
+              {
+                "name": "Planche",
+                "sets": 4,
+                "duration_s": 45,
+                "rest_s": 45
+              },
+              {
+                "name": "Superman",
+                "sets": 3,
+                "reps": 12,
+                "rest_s": 45
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Séance B - Bas du corps",
+        "day_of_week": 3,
+        "variants": [
+          {
+            "duration_min": 15,
+            "warm_up": "2 minutes : montées de genoux.",
+            "cool_down": "Étirements des cuisses, 1 minute.",
+            "exercises": [
+              {
+                "name": "Squats",
+                "sets": 3,
+                "reps": 15,
+                "rest_s": 60
+              },
+              {
+                "name": "Pont fessier",
+                "sets": 2,
+                "reps": 15,
+                "rest_s": 45
+              }
+            ]
+          },
+          {
+            "duration_min": 30,
+            "warm_up": "5 minutes : montées de genoux, squats lents.",
+            "cool_down": "Étirements des cuisses et des mollets, 3 minutes.",
+            "exercises": [
+              {
+                "name": "Squats",
+                "sets": 4,
+                "reps": 15,
+                "rest_s": 60
+              },
+              {
+                "name": "Fentes alternées",
+                "sets": 3,
+                "reps": 12,
+                "rest_s": 60,
+                "notes": "12 par jambe."
+              },
+              {
+                "name": "Pont fessier",
+                "sets": 3,
+                "reps": 15,
+                "rest_s": 45
+              },
+              {
+                "name": "Chaise contre le mur",
+                "sets": 3,
+                "duration_s": 45,
+                "rest_s": 45
+              }
+            ]
+          },
+          {
+            "duration_min": 45,
+            "warm_up": "5 minutes : montées de genoux, squats lents.",
+            "cool_down": "Étirements des cuisses et des mollets, 5 minutes.",
+            "exercises": [
+              {
+                "name": "Squats",
+                "sets": 5,
+                "reps": 15,
+                "rest_s": 60,
+                "harder_variant": "Squats sautés"
+              },
+              {
+                "name": "Fentes alternées",
+                "sets": 4,
+                "reps": 12,
+                "rest_s": 60,
+                "notes": "12 par jambe."
+              },
+              {
+                "name": "Pont fessier",
+                "sets": 4,
+                "reps": 15,
+                "rest_s": 45
+              },
+              {
+                "name": "Chaise contre le mur",
+                "sets": 3,
+                "duration_s": 60,
+                "rest_s": 45
+              },
+              {
+                "name": "Montées sur pointes de pieds",
+                "sets": 3,
+                "reps": 20,
+                "rest_s": 30
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Séance C - Cardio et corps entier",
+        "day_of_week": 5,
+        "variants": [
+          {
+            "duration_min": 15,
+            "warm_up": "2 minutes : jumping jacks.",
+            "cool_down": "Marche lente et respiration, 1 minute.",
+            "exercises": [
+              {
+                "name": "Burpees",
+                "sets": 3,
+                "reps": 6,
+                "rest_s": 60,
+                "easier_variant": "Burpees sans saut"
+              },
+              {
+                "name": "Mountain climbers",
+                "sets": 3,
+                "duration_s": 30,
+                "rest_s": 30
+              }
+            ]
+          },
+          {
+            "duration_min": 30,
+            "warm_up": "5 minutes : jumping jacks, talons-fesses.",
+            "cool_down": "Marche lente et étirements, 3 minutes.",
+            "exercises": [
+              {
+                "name": "Burpees",
+                "sets": 4,
+                "reps": 8,
+                "rest_s": 60,
+                "easier_variant": "Burpees sans saut"
+              },
+              {
+                "name": "Mountain climbers",
+                "sets": 4,
+                "duration_s": 30,
+                "rest_s": 30
+              },
+              {
+                "name": "Superman",
+                "sets": 3,
+                "reps": 12,
+                "rest_s": 45
+              }
+            ]
+          },
+          {
+            "duration_min": 45,
+            "warm_up": "5 minutes : jumping jacks, talons-fesses.",
+            "cool_down": "Marche lente et étirements, 5 minutes.",
+            "exercises": [
+              {
+                "name": "Burpees",
+                "sets": 5,
+                "reps": 8,
+                "rest_s": 60,
+                "easier_variant": "Burpees sans saut"
+              },
+              {
+                "name": "Mountain climbers",
+                "sets": 5,
+                "duration_s": 30,
+                "rest_s": 30
+              },
+              {
+                "name": "Squats sautés",
+                "sets": 4,
+                "reps": 10,
+                "rest_s": 60
+              },
+              {
+                "name": "Superman",
+                "sets": 3,
+                "reps": 15,
+                "rest_s": 45
+              },
+              {
+                "name": "Planche",
+                "sets": 3,
+                "duration_s": 45,
+                "rest_s": 45
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

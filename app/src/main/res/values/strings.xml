@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Healthy</string>
+    <string name="widget_name">Healthy : ma journée</string>
+    <string name="widget_description">Calories, eau et séance du jour, avec les boissons en un geste.</string>
+</resources>

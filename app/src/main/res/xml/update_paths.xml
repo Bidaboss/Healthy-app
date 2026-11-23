@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dossiers partagés : les APK de mise à jour (installateur) et les images « Ma semaine » (partage). -->
+<paths>
+    <cache-path name="updates" path="updates/" />
+    <cache-path name="shared" path="shared/" />
+</paths>

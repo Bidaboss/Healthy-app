@@ -80,7 +80,7 @@ import java.time.LocalDate
  * « LOT n »), à trois endroits : ses routes (Routes), son rattachement à un onglet (tabRouteOf) et ses écrans
  * (NavHost). Voir docs/decisions.md.
  */
-private object Routes {
+internal object Routes {
     // ── Onglets ──
     const val TODAY = "today"
     const val MEALS = "meals"
@@ -444,7 +444,14 @@ private fun MainNavigation(
     }
 }
 
-private fun NavHostController.navigateToTab(route: String) {
+internal fun NavHostController.navigateToTab(route: String) {
+    // Accueil est le départ du graphe : on y revient en dépilant. Avec popUpTo, l'appui ne faisait rien quand on
+    // venait d'un écran ouvert depuis Accueil (Ma montre, Eau...), qui lui-même allume un autre onglet.
+    if (route == graph.findStartDestination().route) {
+        popBackStack(route, inclusive = false)
+        if (currentDestination?.route != route) navigate(route) { launchSingleTop = true }
+        return
+    }
     navigate(route) {
         popUpTo(graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true

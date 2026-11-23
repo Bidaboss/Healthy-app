@@ -78,6 +78,15 @@ jobs:
       - name: Nommer l'APK avec son numéro
         run: mv app/build/outputs/apk/release/app-release.apk "app/build/outputs/apk/release/healthy-${BUILD_NUMBER}.apk"
 
+      # Dépôt sur le dossier Drive des mises à jour, seulement après un push sur main (jamais sur une branche
+      # ni une pull request). Le secret n'est donné qu'à cette étape. Sans lui, l'étape est sautée.
+      - name: Déposer l'APK sur le Drive
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        env:
+          DRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.DRIVE_SERVICE_ACCOUNT_JSON }}
+          UPDATE_FOLDER_LINK: ${{ secrets.UPDATE_FOLDER_LINK }}
+        run: APK_PATH="app/build/outputs/apk/release/healthy-${BUILD_NUMBER}.apk" node scripts/publish-apk.mjs
+
       - name: Publier l'APK
         uses: actions/upload-artifact@v4
         with:

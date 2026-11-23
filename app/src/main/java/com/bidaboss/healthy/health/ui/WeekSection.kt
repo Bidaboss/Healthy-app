@@ -24,6 +24,14 @@ import kotlin.math.roundToInt
 internal fun WeekSection(state: HealthUiState, onOpenWater: () -> Unit, onConnect: () -> Unit) {
     val dates = state.week.map { it.date }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        // La consigne des barres, une seule fois pour toutes les cartes.
+        Text(
+            "Touche une barre pour voir le jour. Pointillé : ton objectif.",
+            style = MaterialTheme.typography.bodySmall.copy(
+                shadow = androidx.compose.ui.graphics.Shadow(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.55f), androidx.compose.ui.geometry.Offset(0f, 2f), 12f),
+            ),
+            color = androidx.compose.ui.graphics.Color.White,
+        )
         // Calories
         val kcal = state.week.map { it.kcal?.toDouble() }
         MetricCard("Calories") {
@@ -47,7 +55,7 @@ internal fun WeekSection(state: HealthUiState, onOpenWater: () -> Unit, onConnec
             val avg = water.averageOrNull()
             if (avg == null) Muted("Aucune eau notée cette semaine.") else {
                 BigNumber("${liters(avg)} par jour")
-                Muted("En moyenne sur les jours notés. Touche pour le détail.")
+                Muted("En moyenne sur les jours notés.")
             }
             WeekBars(
                 dates, water, weekDescription("Eau par jour", dates, water) { liters(it) },

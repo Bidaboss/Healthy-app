@@ -181,7 +181,7 @@ fun WorkoutScreen(
                     }
                 }
                 if (earlier.isNotEmpty()) {
-                    PhotoTitle("Activités des semaines passées", style = MaterialTheme.typography.titleLarge)
+                    Text("Activités des semaines passées", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onBackground)
                     earlier.forEach { activity ->
                         key("activity-${activity.id}") {
                             ActivityCard(activity, state.activityKcal[activity.id], onEdit = { activityToEdit = activity }, onDelete = { activityToDelete = activity })
@@ -189,7 +189,7 @@ fun WorkoutScreen(
                     }
                 }
                 if (state.history.isNotEmpty()) {
-                    PhotoTitle("Historique", style = MaterialTheme.typography.titleLarge)
+                    Text("Historique", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onBackground)
                     Text(
                         "Pour faire évoluer ton plan, envoie ton bilan des 4 dernières semaines à Claude.",
                         style = MaterialTheme.typography.bodyMedium,

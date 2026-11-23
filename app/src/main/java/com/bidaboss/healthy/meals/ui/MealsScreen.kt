@@ -245,6 +245,7 @@ fun MealsScreen(
                         DrinkMenuButton(enabled = state.isToday, onAdd = viewModel::addDrink, modifier = Modifier.weight(1f))
                     }
                 }
+                Spacer(Modifier.height(12.dp))
             }
             // « Ton petit-déjeuner habituel ? » (carte qui était sur Aujourd'hui avant la refonte) : seulement le jour même.
             if (state.isToday && habit.suggestion != null) {
@@ -527,7 +528,10 @@ private fun DrinkMenuButton(enabled: Boolean, onAdd: (Drink) -> Unit, modifier: 
             enabled = enabled,
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest),
-        ) { Text("Ajouter une boisson", maxLines = 2, textAlign = TextAlign.Center) }
+        ) {
+            Icon(Icons.Rounded.LocalBar, contentDescription = null, modifier = Modifier.size(18.dp))
+            Text(" Boisson", maxLines = 1, softWrap = false)
+        }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             Drink.entries.forEach { drink ->
                 DropdownMenuItem(

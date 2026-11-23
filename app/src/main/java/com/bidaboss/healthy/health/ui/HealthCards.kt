@@ -69,15 +69,14 @@ internal fun WeekBars(
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         // Lecture du jour touché ; un deuxième toucher sur la même barre la referme.
         val picked = selected
-        Text(
-            when {
-                picked == null -> if (goal != null) "Touche une barre. Pointillé : objectif." else "Touche une barre pour voir le jour."
-                else -> "${chartDate(dates[picked]).replaceFirstChar(Char::uppercase)} : ${values.getOrNull(picked)?.let(format) ?: "pas de donnée"}"
-            },
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = if (picked == null) FontWeight.Normal else FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        if (picked != null) {
+            Text(
+                "${chartDate(dates[picked]).replaceFirstChar(Char::uppercase)} : ${values.getOrNull(picked)?.let(format) ?: "pas de donnée"}",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Box {
             Row(
                 modifier = Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description },

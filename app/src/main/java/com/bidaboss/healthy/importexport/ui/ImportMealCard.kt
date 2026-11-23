@@ -53,7 +53,7 @@ fun ImportMealCard(
         var menuOpen by remember { mutableStateOf(false) }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = modifier.fillMaxWidth()) {
             Box(Modifier.weight(1f)) {
-                Button(onClick = { menuOpen = true }, modifier = Modifier.fillMaxWidth()) { Text("Importer de mon IA", maxLines = 2, textAlign = TextAlign.Center) }
+                Button(onClick = { menuOpen = true }, modifier = Modifier.fillMaxWidth()) { Text("Importer d'une IA", maxLines = 1, softWrap = false, textAlign = TextAlign.Center) }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                     DropdownMenuItem(
                         text = { Text("Coller le bloc copié") },

@@ -8,18 +8,26 @@ import java.time.temporal.TemporalAdjusters
 enum class Mood { HAPPY, ENCOURAGING, PROUD }
 
 /**
- * Pousse grandit avec la série (fil Design, B3) : 2 feuilles (0-1 semaine), 4 feuilles (2-3),
- * petite plante (4-7), arbuste (8 et plus).
+ * Pousse grandit avec la série de semaines actives (refonte, lot 5) : feuille (0-1 semaine),
+ * jeune pousse (2-3), arbuste avec tronc (4-7), arbre en fleur (8 et plus).
+ * [label] complète « Pousse est … » ; [levelUpMessage] est dit une seule fois quand le palier monte.
  */
-enum class Growth(val label: String, val minWeeks: Int) {
-    SPROUT("avec deux feuilles", 0),
-    LEAVES("avec quatre feuilles", 2),
-    PLANT("devenue une petite plante", 4),
-    SHRUB("devenue un arbuste", 8),
+enum class Growth(val label: String, val minWeeks: Int, val levelUpMessage: String) {
+    LEAF("une feuille qui germe", 0, "Pousse germe : une première feuille !"),
+    SPROUT("une jeune pousse", 2, "Pousse grandit : c'est une jeune pousse ! 2 semaines actives d'affilée."),
+    SHRUB("un arbuste", 4, "Pousse a un tronc : c'est un arbuste ! 4 semaines actives d'affilée."),
+    TREE("un arbre en fleur", 8, "Pousse est un arbre en fleur ! 8 semaines actives d'affilée, bravo."),
     ;
 
     companion object {
         fun forStreak(weeks: Int): Growth = entries.last { weeks >= it.minWeeks }
+
+        /**
+         * Message de montée de niveau : seulement si le palier [current] est au-dessus du dernier palier
+         * vu [lastSeen]. Premier lancement (rien de vu) ou palier qui redescend : pas de message.
+         */
+        fun levelUp(lastSeen: Growth?, current: Growth): String? =
+            if (lastSeen != null && current > lastSeen) current.levelUpMessage else null
     }
 }
 
@@ -66,7 +74,7 @@ object Motivation {
      */
     fun growth(activeDates: Collection<LocalDate>, today: LocalDate): Growth {
         val activeWeeks = activeDates.filter { !it.isAfter(today) }.mapTo(HashSet()) { weekStart(it) }
-        val first = activeWeeks.minOrNull() ?: return Growth.SPROUT
+        val first = activeWeeks.minOrNull() ?: return Growth.LEAF
         val current = weekStart(today)
         var stage = 0
         var streak = 0

@@ -3,6 +3,7 @@ package com.bidaboss.healthy.core.progress
 import java.time.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class MotivationTest {
     // Mercredi 11 novembre 2026 : semaine du lundi 9.
@@ -71,22 +72,40 @@ class MotivationTest {
     fun `pousse grandit avec la serie et ne retombe que d'un palier`() {
         val monday = LocalDate.of(2026, 9, 7)
         fun weeks(vararg w: Long) = w.map { monday.plusWeeks(it) }
-        // Rien : deux feuilles.
-        assertEquals(Growth.SPROUT, Motivation.growth(emptyList(), monday))
-        // 2 semaines : quatre feuilles ; 4 : petite plante ; 8 : arbuste.
-        assertEquals(Growth.LEAVES, Motivation.growth(weeks(0, 1), monday.plusWeeks(1)))
-        assertEquals(Growth.PLANT, Motivation.growth(weeks(0, 1, 2, 3), monday.plusWeeks(3)))
+        // Rien : une feuille.
+        assertEquals(Growth.LEAF, Motivation.growth(emptyList(), monday))
+        // 2 semaines : jeune pousse ; 4 : arbuste ; 8 : arbre en fleur.
+        assertEquals(Growth.SPROUT, Motivation.growth(weeks(0, 1), monday.plusWeeks(1)))
+        assertEquals(Growth.SHRUB, Motivation.growth(weeks(0, 1, 2, 3), monday.plusWeeks(3)))
         val eight = weeks(0, 1, 2, 3, 4, 5, 6, 7)
-        assertEquals(Growth.SHRUB, Motivation.growth(eight, monday.plusWeeks(7)))
+        assertEquals(Growth.TREE, Motivation.growth(eight, monday.plusWeeks(7)))
         // La semaine en cours sans séance ne casse rien.
-        assertEquals(Growth.SHRUB, Motivation.growth(eight, monday.plusWeeks(8)))
+        assertEquals(Growth.TREE, Motivation.growth(eight, monday.plusWeeks(8)))
         // Une semaine manquée : un seul palier de moins, même après plusieurs semaines vides.
-        assertEquals(Growth.PLANT, Motivation.growth(eight, monday.plusWeeks(9)))
-        assertEquals(Growth.PLANT, Motivation.growth(eight, monday.plusWeeks(12)))
-        // Nouvelle série de 8 semaines : il redevient arbuste.
+        assertEquals(Growth.SHRUB, Motivation.growth(eight, monday.plusWeeks(9)))
+        assertEquals(Growth.SHRUB, Motivation.growth(eight, monday.plusWeeks(12)))
+        // Nouvelle série de 8 semaines : il redevient arbre en fleur.
         val again = eight + weeks(13, 14, 15, 16, 17, 18, 19, 20)
-        assertEquals(Growth.SHRUB, Motivation.growth(again, monday.plusWeeks(20)))
-        // Jamais sous les deux feuilles.
-        assertEquals(Growth.SPROUT, Motivation.growth(weeks(0), monday.plusWeeks(10)))
+        assertEquals(Growth.TREE, Motivation.growth(again, monday.plusWeeks(20)))
+        // Jamais sous la feuille.
+        assertEquals(Growth.LEAF, Motivation.growth(weeks(0), monday.plusWeeks(10)))
+    }
+
+    @Test
+    fun `message de montee de niveau seulement quand le palier monte`() {
+        assertNull(Growth.levelUp(null, Growth.SPROUT))
+        assertNull(Growth.levelUp(Growth.SPROUT, Growth.SPROUT))
+        assertNull(Growth.levelUp(Growth.TREE, Growth.SHRUB))
+        assertEquals(Growth.SPROUT.levelUpMessage, Growth.levelUp(Growth.LEAF, Growth.SPROUT))
+        assertEquals(Growth.TREE.levelUpMessage, Growth.levelUp(Growth.LEAF, Growth.TREE))
+    }
+
+    @Test
+    fun `les quatre paliers suivent les semaines actives`() {
+        assertEquals(listOf(0, 2, 4, 8), Growth.entries.map { it.minWeeks })
+        assertEquals(Growth.LEAF, Growth.forStreak(1))
+        assertEquals(Growth.SPROUT, Growth.forStreak(3))
+        assertEquals(Growth.SHRUB, Growth.forStreak(7))
+        assertEquals(Growth.TREE, Growth.forStreak(30))
     }
 }

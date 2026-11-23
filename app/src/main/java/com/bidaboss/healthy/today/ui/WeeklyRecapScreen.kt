@@ -192,7 +192,7 @@ private fun SportPage(recap: WeeklyRecap, color: Color, texts: ThemeTexts) {
 @Composable
 private fun PoussePage(recap: WeeklyRecap, color: Color) {
     Pousse(Mood.PROUD, size = 180.dp, growth = recap.growth)
-    BigLine("Pousse est ${recap.growth.label.removePrefix("devenue ").let { if (it.startsWith("avec")) "une pousse $it" else it }}", color)
+    BigLine("Pousse est ${recap.growth.label}", color)
     recap.badge?.let { badge ->
         SmallLine(if (recap.badgeIsNew) "Nouveau badge : ${badge.title} !" else "Ton badge : ${badge.title}", color)
     }

@@ -78,7 +78,7 @@ fun TodayScreen(
     ),
     headerViewModel: HeaderViewModel = viewModel(
         factory = healthyViewModelFactory {
-            HeaderViewModel(it.bodyRepository, it.workoutRepository, it.workoutLogRepository, it.mealRepository)
+            HeaderViewModel(it.bodyRepository, it.workoutRepository, it.workoutLogRepository, it.mealRepository, it.pousseStageStore)
         },
     ),
     watchViewModel: WatchViewModel = viewModel(
@@ -128,6 +128,7 @@ fun TodayScreen(
         PhotoBackground(PhotoTab.TODAY) {
             Column {
                 TodayHeader(header, onOpenBadges)
+                header.levelUpMessage?.let { LevelUpBanner(it, header.growth, headerViewModel::onLevelUpSeen, Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) }
                 Column(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),

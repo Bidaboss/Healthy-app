@@ -31,6 +31,7 @@ import com.bidaboss.healthy.core.progress.Growth
 import com.bidaboss.healthy.core.progress.Mood
 import com.bidaboss.healthy.core.progress.Motivation
 import com.bidaboss.healthy.meals.data.MealRepository
+import com.bidaboss.healthy.settings.data.PousseStageStore
 import com.bidaboss.healthy.ui.Pousse
 import com.bidaboss.healthy.ui.StreakFlame
 import com.bidaboss.healthy.ui.ThemeTexts
@@ -57,7 +58,9 @@ data class HeaderUiState(
     /** Quand la série montera : elle compte les semaines, pas les séances. */
     val streakHint: String = "",
     /** Pousse grandit avec la série (fil Design, B3). */
-    val growth: Growth = Growth.SPROUT,
+    val growth: Growth = Growth.LEAF,
+    /** Message de montée de niveau, tant que la personne ne l'a pas fermé. */
+    val levelUpMessage: String? = null,
 )
 
 /** En-tête d'Aujourd'hui : bonjour, humeur de Pousse et flamme des semaines actives. */
@@ -67,9 +70,11 @@ class HeaderViewModel(
     workoutRepository: WorkoutRepository,
     workoutLogRepository: WorkoutLogRepository,
     mealRepository: MealRepository,
+    private val stageStore: PousseStageStore,
     private val today: () -> LocalDate = { LocalDate.now() },
 ) : ViewModel() {
     private val date = MutableStateFlow(today())
+    private val acknowledgements = MutableStateFlow(0)
 
     val uiState: StateFlow<HeaderUiState> = date.flatMapLatest { day ->
         combine(
@@ -77,7 +82,12 @@ class HeaderViewModel(
             workoutRepository.observeActivePlan(),
             workoutLogRepository.observeActiveDates(),
             mealRepository.observeMeals(day),
-        ) { profile, plan, activeDates, meals ->
+            acknowledgements,
+        ) { profile, plan, activeDates, meals, _ ->
+            val growth = Motivation.growth(activeDates, day)
+            val levelUp = Growth.levelUp(stageStore.lastSeen(), growth)
+            // Premier lancement ou étape qui redescend : on note l'étape sans rien dire.
+            if (levelUp == null) stageStore.setLastSeen(growth)
             val planned = plan?.sessions?.any { it.dayOfWeek == day.dayOfWeek.value } == true
             val mood = Motivation.mood(sessionDoneToday = day in activeDates, sessionPlannedToday = planned)
             HeaderUiState(
@@ -87,13 +97,20 @@ class HeaderViewModel(
                 mealCount = meals.size,
                 streakWeeks = Motivation.activeWeekStreak(activeDates, day),
                 streakHint = Motivation.streakHint(activeDates, day),
-                growth = Motivation.growth(activeDates, day),
+                growth = growth,
+                levelUpMessage = levelUp,
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HeaderUiState(date = today()))
 
     fun onResume() {
         date.value = today()
+    }
+
+    /** La personne a lu le message : l'étape est notée comme vue. */
+    fun onLevelUpSeen() {
+        stageStore.setLastSeen(uiState.value.growth)
+        acknowledgements.value++
     }
 }
 

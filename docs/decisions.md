@@ -133,8 +133,9 @@ Validées par le propriétaire avec le fil Design (13/11/2026), ordre conseillé
 - **A2** (fait) Écran de séance : gros chrono circulaire qui se vide (repos et exercices en durée), vibration
   et bip court à la fin du repos et à 3-2-1 (son coupé en silencieux), carte « Ensuite : … » pendant le
   repos, barre de progression de la séance (exercice n / total).
-- **B3** (fait) Pousse grandit avec la série : 2 feuilles (0-1 sem.), 4 feuilles (2-3), petite plante (4-7),
-  arbuste (8+). Si la série casse, il retombe d'un seul palier, jamais à zéro, sans message culpabilisant.
+- **B3** (fait, refait au lot 5 de la refonte, 23/11/2026) Pousse grandit avec les semaines actives d'affilée :
+  feuille (0-1 sem.), jeune pousse (2-3), arbuste avec tronc (4-7), arbre en fleur avec fruits (8+). Si la série
+  casse, il retombe d'un seul palier, jamais sous la feuille, sans message culpabilisant.
 - **B4** (fait) Bilan de la semaine (version accordée entre Design et Nutrition, 13/11/2026) : story plein
   écran qui s'ouvre le lundi à la première ouverture, et se rouvre depuis une carte sur Aujourd'hui (du
   dimanche 18 h au mardi). Pages : 1) nutrition de la semaine lun-dim : moyenne kcal face au maintien
@@ -383,6 +384,12 @@ Choix du propriétaire, 23/11/2026 (PRD `docs/prd/ecran-montre.md`).
 - Animations : l'anneau des calories se remplit et le chiffre défile ; après l'enregistrement d'une séance,
   écran « Bravo ! » avec Pousse fière et confettis. Dessinés en Compose, sans bibliothèque ni fichier
   d'animation (donc rien à licencier) ; ils suivent le réglage « animations » du téléphone.
+- Pousse en relief (refonte, lot 5, validé par le propriétaire le 23/11/2026) : dégradés pour le volume, reflet,
+  ombre au sol, dessinée en Compose à partir des vecteurs du prototype (`ui/Pousse.kt`). API : `Pousse(growth, theme,
+  size, mood)`. Tenue par thème : Pirate = bandana rouge et cache-œil, Voyage = chapeau de paille et sac à dos,
+  Classique = rien. Message de montée de niveau (« Pousse a grandi ! », bouton OK) une seule fois quand l'étape monte :
+  l'app retient la dernière étape vue dans les préférences du téléphone (aucune table, pas dans la sauvegarde) ;
+  aucun message au premier lancement ni quand l'étape redescend.
 - Icône de l'appli « Capitaine Pousse » (choix du propriétaire, 11/11/2026) : Pousse en pirate, fourchette et
   haltère croisés, fond #17301F ; couche monochrome pour les icônes à thème. Le nom reste « Healthy ».
 - Un motif discret par espace (choix du propriétaire, 11/11/2026), en vectoriel : Aujourd'hui, carte au trésor

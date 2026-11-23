@@ -466,7 +466,22 @@ Cette section est tenue à jour par chaque lot, dans son emplacement.
 
 ### Lot 3 : Sport et trajets
 
-(à remplir par le lot 3)
+- **Sport** : fond photo, une seule liste « Cette semaine » où les séances du plan (pastille « Prévue », bouton
+  Commencer) et les activités ajoutées (pastille « Ajoutée ») ont les mêmes cartes et comptent pareil dans la
+  série et les semaines actives. Les activités des semaines passées sont dessous, l'historique des séances ensuite.
+  Le bouton « + Activité » ouvre « Ajouter une activité » : Vélo, Marche, Course, Kiné ou Autre (texte libre ;
+  les anciens types gardent leur nom), durée, jour, zones travaillées, et, pour Vélo, Marche et Course, la liste
+  de « Mes trajets ».
+- **Mes trajets** : un trajet a un nom, un départ, 0 à 8 étapes et une arrivée, saisis comme adresses. « Calculer la
+  distance » (jamais automatique) demande le trajet à vélo à OpenStreetMap, une seule fois : la distance d'un sens
+  est enregistrée avec le trajet et sert ensuite hors ligne. Changer une adresse efface la distance calculée.
+  Sans internet ou si le service refuse, on saisit la distance à la main. Les adresses restent sur le téléphone
+  (sauvegarde comprise) ; l'exception réseau est décrite dans `docs/architecture.md`.
+- **Ajouter ce trajet** : Aller, Retour ou Aller-retour (par défaut), en un appui. Distance = un sens, ou le double ;
+  durée estimée à 15 km/h (vélo), 5 km/h (marche), 10 km/h (course), modifiable ensuite par « Modifier ». L'activité
+  garde une copie du nom du trajet, du sens et de la distance : supprimer ou changer un trajet ne change pas le journal.
+- Base v15 (renumérotée 16 si le lot 2 fusionne avant) : table `saved_routes`, colonnes `route_id`, `route_name`,
+  `route_direction` et `distance_km` sur `activities`.
 
 ### Lot 4 : Santé et Moi
 

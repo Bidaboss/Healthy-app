@@ -22,6 +22,8 @@ import com.bidaboss.healthy.meals.data.RecipeItemEntity
 import com.bidaboss.healthy.meals.data.ScannedProductDao
 import com.bidaboss.healthy.meals.data.ScannedProductEntity
 import com.bidaboss.healthy.workout.data.ActivityEntity
+import com.bidaboss.healthy.workout.data.route.SavedRouteDao
+import com.bidaboss.healthy.workout.data.route.SavedRouteEntity
 import com.bidaboss.healthy.workout.data.SportProfileDao
 import com.bidaboss.healthy.workout.data.SportProfileEntity
 import com.bidaboss.healthy.workout.data.WorkoutDao
@@ -57,6 +59,7 @@ import com.bidaboss.healthy.workout.data.WorkoutSessionVariantEntity
         RecipeItemEntity::class,
         ScannedProductEntity::class,
         WatchDayEntity::class,
+        SavedRouteEntity::class,
     ],
     version = HealthyDatabase.VERSION,
     exportSchema = true,
@@ -71,10 +74,11 @@ abstract class HealthyDatabase : RoomDatabase() {
     abstract fun recipeDao(): RecipeDao
     abstract fun scannedProductDao(): ScannedProductDao
     abstract fun watchDayDao(): WatchDayDao
+    abstract fun savedRouteDao(): SavedRouteDao
 
     companion object {
         /** Version du schéma. L'augmenter impose d'ajouter une migration dans [Migrations]. */
-        const val VERSION = 14
+        const val VERSION = 15
 
         fun create(context: Context): HealthyDatabase =
             Room.databaseBuilder(context, HealthyDatabase::class.java, "healthy.db")

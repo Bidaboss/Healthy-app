@@ -52,6 +52,9 @@ import com.bidaboss.healthy.today.ui.WaterScreen
 import com.bidaboss.healthy.today.ui.WeeklyRecapScreen
 import com.bidaboss.healthy.update.ui.UpdateDialog
 import com.bidaboss.healthy.update.ui.UpdateViewModel
+import com.bidaboss.healthy.workout.ui.AddActivityScreen
+import com.bidaboss.healthy.workout.ui.RouteEditorScreen
+import com.bidaboss.healthy.workout.ui.RoutesScreen
 import com.bidaboss.healthy.workout.ui.SessionRunScreen
 import com.bidaboss.healthy.workout.ui.SportProfileScreen
 import com.bidaboss.healthy.workout.ui.WorkoutScreen
@@ -116,6 +119,14 @@ private object Routes {
 
     fun sessionRun(sessionId: Long, durationMin: Int) = "$SESSION_RUN/$sessionId/$durationMin"
 
+    const val ADD_ACTIVITY = "add_activity"
+    const val ROUTES = "routes"
+    const val ROUTE_EDITOR = "route_editor"
+    const val ARG_ROUTE_ID = "routeId"
+
+    /** [routeId] nul = nouveau trajet. */
+    fun routeEditor(routeId: Long?) = "$ROUTE_EDITOR/${routeId ?: NO_MEAL}"
+
     // ── LOT 4 : Santé et Moi ──
     const val WATCH = "watch"
 }
@@ -139,7 +150,8 @@ private fun tabRouteOf(route: String?): String? = when {
     route == Routes.MEALS || route == Routes.SCANNED_PRODUCTS || route == Routes.RECIPES ||
         route.startsWith(Routes.MEAL_EDITOR) || route.startsWith(Routes.RECIPE_EDITOR) -> Routes.MEALS
     // LOT 3 : Sport et trajets
-    route == Routes.WORKOUT || route.startsWith(Routes.SESSION_RUN) -> Routes.WORKOUT
+    route == Routes.WORKOUT || route.startsWith(Routes.SESSION_RUN) || route == Routes.ADD_ACTIVITY ||
+        route == Routes.ROUTES || route.startsWith(Routes.ROUTE_EDITOR) -> Routes.WORKOUT
     // LOT 4 : Santé et Moi
     route == Routes.HEALTH || route == Routes.WATCH -> Routes.HEALTH
     // LOT 0 : Moi, Réglages et import
@@ -289,6 +301,27 @@ private fun MainNavigation(
                     },
                     onImport = { navController.navigate(Routes.IMPORT) { launchSingleTop = true } },
                     onOpenWatch = { navController.navigate(Routes.WATCH) { launchSingleTop = true } },
+                    onAddActivity = { navController.navigate(Routes.ADD_ACTIVITY) { launchSingleTop = true } },
+                    onOpenRoutes = { navController.navigate(Routes.ROUTES) { launchSingleTop = true } },
+                )
+            }
+            composable(Routes.ADD_ACTIVITY) {
+                AddActivityScreen(
+                    onClose = { navController.popBackStack() },
+                    onOpenRoutes = { navController.navigate(Routes.ROUTES) { launchSingleTop = true } },
+                    onEditRoute = { navController.navigate(Routes.routeEditor(it)) { launchSingleTop = true } },
+                )
+            }
+            composable(Routes.ROUTES) {
+                RoutesScreen(onEdit = { navController.navigate(Routes.routeEditor(it)) { launchSingleTop = true } })
+            }
+            composable(
+                route = "${Routes.ROUTE_EDITOR}/{${Routes.ARG_ROUTE_ID}}",
+                arguments = listOf(navArgument(Routes.ARG_ROUTE_ID) { type = NavType.LongType }),
+            ) { entry ->
+                RouteEditorScreen(
+                    routeId = entry.arguments?.getLong(Routes.ARG_ROUTE_ID)?.takeIf { it != Routes.NO_MEAL },
+                    onClose = { navController.popBackStack() },
                 )
             }
             composable(

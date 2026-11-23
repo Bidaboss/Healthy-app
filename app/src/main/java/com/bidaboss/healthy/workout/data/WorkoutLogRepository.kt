@@ -5,6 +5,7 @@ import com.bidaboss.healthy.core.trainingreport.ReportExercise
 import com.bidaboss.healthy.core.trainingreport.ReportSession
 import com.bidaboss.healthy.core.trainingreport.TrainingReport
 import com.bidaboss.healthy.core.trainingreport.TrainingReportWriter
+import com.bidaboss.healthy.core.route.RouteDirection
 import com.bidaboss.healthy.core.watch.SessionSummary
 import com.bidaboss.healthy.core.workout.BodyPart
 import com.bidaboss.healthy.core.workout.DoneValues
@@ -69,7 +70,14 @@ data class FreeActivity(
     val type: String,
     val durationMin: Int,
     val bodyParts: List<BodyPart> = emptyList(),
+    /** Trajet d'où elle vient (nom copié, sens) et distance parcourue, ou null. */
+    val routeName: String? = null,
+    val routeDirection: RouteDirection? = null,
+    val distanceKm: Double? = null,
 )
+
+/** Trajet utilisé par une activité : lien, nom copié, sens et distance parcourue (sens compris). */
+data class RouteUse(val routeId: Long?, val name: String, val direction: RouteDirection, val distanceKm: Double)
 
 class WorkoutLogRepository(
     private val logDao: WorkoutLogDao,
@@ -96,7 +104,12 @@ class WorkoutLogRepository(
 
     fun observeRecentActivities(limit: Int = 30): Flow<List<FreeActivity>> =
         logDao.observeRecentActivities(limit).map { rows ->
-            rows.map { FreeActivity(it.id, LocalDate.parse(it.localDate), it.type, it.durationMin, BodyPart.parse(it.bodyParts)) }
+            rows.map {
+                FreeActivity(
+                    it.id, LocalDate.parse(it.localDate), it.type, it.durationMin, BodyPart.parse(it.bodyParts),
+                    it.routeName, RouteDirection.fromCode(it.routeDirection), it.distanceKm,
+                )
+            }
         }
 
     /** Nombre d'activités libres entre deux jours inclus. */
@@ -122,6 +135,7 @@ class WorkoutLogRepository(
         nowEpochMs: Long,
         bodyParts: Collection<BodyPart> = emptyList(),
         healthId: String? = null,
+        route: RouteUse? = null,
     ): Boolean {
         val name = type.trim().take(MAX_ACTIVITY_TYPE_LENGTH)
         if (name.isEmpty() || durationMin !in 1..MAX_ACTIVITY_MINUTES) return false
@@ -134,6 +148,10 @@ class WorkoutLogRepository(
                 createdAtEpochMs = nowEpochMs,
                 bodyParts = BodyPart.format(bodyParts),
                 healthId = healthId,
+                routeId = route?.routeId,
+                routeName = route?.name?.take(MAX_ACTIVITY_TYPE_LENGTH),
+                routeDirection = route?.direction?.code,
+                distanceKm = route?.distanceKm,
             ),
         )
         // -1 : cette séance de la montre est déjà dans le journal.

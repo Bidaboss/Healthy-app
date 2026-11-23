@@ -15,4 +15,7 @@ data class DayTotals(
     /** Séances du plan et activités de ce jour (leur nombre et leur durée en minutes). */
     val sessions: Int,
     val sportMinutes: Int,
+    /** Objectif du jour : le maintien en kcal, et l'eau à boire en mL ; null sans profil. */
+    val kcalGoal: Int? = null,
+    val waterGoalMl: Int? = null,
 )

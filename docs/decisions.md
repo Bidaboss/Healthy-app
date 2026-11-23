@@ -465,6 +465,7 @@ Cette section est tenue à jour par chaque lot, dans son emplacement.
   grille 2 x 2 ; un appui ouvre l'écran Ma
   montre (Santé). La carte est masquée sans montre connectée. La distance affiche « – » tant que le lot 4 ne la
   fournit pas. Les séances à ajouter au journal restent proposées dans la carte.
+- **Finitions du 23/11/2026** (audit du fil Design, validé par le propriétaire) : l'onglet s'appelle « Accueil » (l'écran garde le titre « Aujourd'hui »). Titres et boutons à contour posés sur la photo en blanc avec ombre (Sport, pastille Santé inactive, bilan repas). En-tête d'Accueil aligné à 16 dp avec les cartes, Pousse plus grande, série à droite. Repas : « Importer de mon IA » (menu Coller / Choisir un fichier) et « Ajouter une boisson » (menu bière, vin, soda, jus) forment une seule rangée ; l'aperçu d'import reprend sa carte quand il y a un fichier à valider. Santé : toucher une barre affiche la valeur du jour ; pointillé de l'objectif (maintien en kcal, eau du jour). Transitions en fondu avec petit glissement ; petite vibration à l'ajout d'un repas, d'une pesée et à la fin d'une séance. Pas d'accessibilité renforcée (choix du propriétaire).
 - **Palette Classique** (retouches du 23/11/2026, prototype) : fond F3FAF5, primaire 1F7A47, accent corail FF8A65.
 - Aucune table, aucune migration.
 

@@ -1,6 +1,8 @@
 package com.bidaboss.healthy.today.data
 
 import com.bidaboss.healthy.body.data.BodyRepository
+import com.bidaboss.healthy.core.body.Hydration
+import com.bidaboss.healthy.core.body.Maintenance
 import com.bidaboss.healthy.health.data.DayTotals
 import com.bidaboss.healthy.meals.data.MealRepository
 import com.bidaboss.healthy.workout.data.WorkoutLogRepository
@@ -26,7 +28,8 @@ class HealthWeekRepository(
             meals.observeMealsBetween(first, today),
             body.observeDailyWater(first, today),
             combine(sport) { it.toList() },
-        ) { allMeals, water, perDay ->
+            combine(body.observeProfile(), body.observeWeighIns()) { p, w -> p to w },
+        ) { allMeals, water, perDay, (profile, weighIns) ->
             val byDay = allMeals.groupBy { it.localDate }
             (0 until DAYS).map { i ->
                 val day = first.plusDays(i.toLong())
@@ -36,6 +39,10 @@ class HealthWeekRepository(
                     waterMl = water[day]?.takeIf { it > 0 },
                     sessions = perDay[i].count,
                     sportMinutes = perDay[i].minutes,
+                    kcalGoal = profile?.let { Maintenance.maintenanceKcal(it, weighIns, day) },
+                    waterGoalMl = profile?.let {
+                        Hydration.targetMl(it.sex, Maintenance.referenceWeightKg(it.weightKg, weighIns, day), perDay[i].count)
+                    },
                 )
             }
         }

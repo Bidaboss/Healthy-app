@@ -34,6 +34,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.LaunchedEffect
+import com.bidaboss.healthy.ui.WaterFeedback
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -96,6 +98,7 @@ fun SessionRunScreen(
 
     // Séance enregistrée : on fête ça avant de revenir.
     if (state.finished) {
+        LaunchedEffect(Unit) { WaterFeedback.tick(context) }
         BackHandler(onBack = onClose)
         SessionCelebration(onClose, modifier)
         return

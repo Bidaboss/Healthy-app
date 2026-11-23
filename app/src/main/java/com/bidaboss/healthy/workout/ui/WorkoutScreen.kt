@@ -75,6 +75,7 @@ import com.bidaboss.healthy.ui.theme.HealthyTheme
 import com.bidaboss.healthy.ui.theme.healthyTonalIconButtonColors
 import com.bidaboss.healthy.ui.PhotoBackground
 import com.bidaboss.healthy.ui.PhotoTab
+import com.bidaboss.healthy.ui.PhotoOutlinedButton
 import com.bidaboss.healthy.ui.PhotoTitle
 import com.bidaboss.healthy.workout.data.FreeActivity
 import com.bidaboss.healthy.workout.data.SessionLog
@@ -160,13 +161,13 @@ fun WorkoutScreen(
                         }
                     }
                 }
-                OutlinedButton(onClick = onOpenRoutes, modifier = Modifier.fillMaxWidth()) {
+                PhotoOutlinedButton(onClick = onOpenRoutes, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Rounded.Route, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(" Mes trajets")
                 }
 
                 // Liste unique : séances prévues et activités ajoutées, mêmes cartes, comptées pareil dans la série.
-                Text("Cette semaine", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onBackground)
+                PhotoTitle("Cette semaine", style = MaterialTheme.typography.titleLarge)
                 if (plan == null) {
                     EmptyState(ThemeTexts.current.noPlan, action = "Importer mon plan", onAction = onImport)
                 } else {
@@ -180,7 +181,7 @@ fun WorkoutScreen(
                     }
                 }
                 if (earlier.isNotEmpty()) {
-                    Text("Activités des semaines passées", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onBackground)
+                    PhotoTitle("Activités des semaines passées", style = MaterialTheme.typography.titleLarge)
                     earlier.forEach { activity ->
                         key("activity-${activity.id}") {
                             ActivityCard(activity, state.activityKcal[activity.id], onEdit = { activityToEdit = activity }, onDelete = { activityToDelete = activity })
@@ -188,7 +189,7 @@ fun WorkoutScreen(
                     }
                 }
                 if (state.history.isNotEmpty()) {
-                    Text("Historique", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onBackground)
+                    PhotoTitle("Historique", style = MaterialTheme.typography.titleLarge)
                     Text(
                         "Pour faire évoluer ton plan, envoie ton bilan des 4 dernières semaines à Claude.",
                         style = MaterialTheme.typography.bodyMedium,

@@ -3,6 +3,13 @@ package com.bidaboss.healthy.importexport.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
@@ -14,6 +21,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -30,12 +38,37 @@ fun ImportMealCard(
     onPickFile: () -> Unit,
     onOpenImport: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Second bouton de la rangée au repos (« Ajouter une boisson »), posé par l'écran Repas. */
+    idleExtra: @Composable RowScope.() -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val current = state
     val preview = current as? ImportUiState.Preview
     val meal = (preview?.document as? ImportDocument.Meal)?.meal
+
+    val idle = meal == null && preview == null && current !is ImportUiState.Invalid && current !is ImportUiState.Saved
+    if (idle) {
+        // Au repos : une rangée de deux boutons (retouches du 23/11/2026), pas une carte entière.
+        var menuOpen by remember { mutableStateOf(false) }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = modifier.fillMaxWidth()) {
+            Box(Modifier.weight(1f)) {
+                Button(onClick = { menuOpen = true }, modifier = Modifier.fillMaxWidth()) { Text("Importer de mon IA", maxLines = 2, textAlign = TextAlign.Center) }
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    DropdownMenuItem(
+                        text = { Text("Coller le bloc copié") },
+                        onClick = { menuOpen = false; pasteFromClipboard(context, viewModel) },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Choisir un fichier") },
+                        onClick = { menuOpen = false; onPickFile() },
+                    )
+                }
+            }
+            idleExtra()
+        }
+        return
+    }
 
     Card(modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

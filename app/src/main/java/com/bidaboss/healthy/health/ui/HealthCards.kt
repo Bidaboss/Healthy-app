@@ -1,6 +1,16 @@
 package com.bidaboss.healthy.health.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.PathEffect
+import kotlin.math.roundToInt
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,7 +48,8 @@ internal fun MetricCard(title: String, modifier: Modifier = Modifier, onClick: (
 
 /**
  * Sept barres, une par jour, avec la lettre du jour dessous (aujourd'hui en gras). Un jour sans donnée (null) est
- * un trou : un petit trait, jamais une barre à zéro. Les valeurs sont lues en entier par TalkBack via [description].
+ * un trou : un petit trait, jamais une barre à zéro. Toucher une barre affiche la valeur de ce jour (retouches du
+ * 23/11/2026) ; [goal] trace l'objectif en pointillé. Les valeurs sont lues en entier par TalkBack via [description].
  */
 @Composable
 internal fun WeekBars(
@@ -47,30 +58,70 @@ internal fun WeekBars(
     description: String,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
+    goal: Double? = null,
+    format: (Double) -> String = { it.roundToInt().toString() },
 ) {
-    val max = (values.filterNotNull().maxOrNull() ?: 1.0).coerceAtLeast(1.0)
+    val max = (values.filterNotNull() + listOfNotNull(goal)).maxOrNull()?.coerceAtLeast(1.0) ?: 1.0
     val gap = MaterialTheme.colorScheme.outlineVariant
-    Row(
-        modifier = modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description },
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        dates.forEachIndexed { i, date ->
-            val value = values.getOrNull(i)
-            Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(Modifier.fillMaxWidth().height(72.dp), contentAlignment = Alignment.BottomCenter) {
-                    if (value == null) {
-                        Box(Modifier.fillMaxWidth().height(3.dp).background(gap, RoundedCornerShape(2.dp)))
-                    } else {
-                        val h = (value / max).toFloat().coerceIn(0.04f, 1f)
-                        Box(Modifier.fillMaxWidth().height(72.dp * h).background(color, RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 3.dp, bottomEnd = 3.dp)))
+    val goalColor = MaterialTheme.colorScheme.onSurfaceVariant
+    var selected by remember { mutableStateOf<Int?>(null) }
+    val barArea = 72.dp
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        // Lecture du jour touché ; un deuxième toucher sur la même barre la referme.
+        val picked = selected
+        Text(
+            when {
+                picked == null -> if (goal != null) "Touche une barre. Pointillé : objectif." else "Touche une barre pour voir le jour."
+                else -> "${chartDate(dates[picked]).replaceFirstChar(Char::uppercase)} : ${values.getOrNull(picked)?.let(format) ?: "pas de donnée"}"
+            },
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = if (picked == null) FontWeight.Normal else FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Box {
+            Row(
+                modifier = Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description },
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                dates.forEachIndexed { i, date ->
+                    val value = values.getOrNull(i)
+                    Column(
+                        modifier = Modifier.weight(1f).clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) { selected = if (selected == i) null else i },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Box(Modifier.fillMaxWidth().height(barArea), contentAlignment = Alignment.BottomCenter) {
+                            if (value == null) {
+                                Box(Modifier.fillMaxWidth().height(3.dp).background(gap, RoundedCornerShape(2.dp)))
+                            } else {
+                                val h = (value / max).toFloat().coerceIn(0.04f, 1f)
+                                val shade = if (selected == null || selected == i) color else color.copy(alpha = 0.45f)
+                                Box(Modifier.fillMaxWidth().height(barArea * h).background(shade, RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 3.dp, bottomEnd = 3.dp)))
+                            }
+                        }
+                        Text(
+                            date.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.FRENCH).uppercase(Locale.FRENCH),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = if (i == dates.lastIndex || selected == i) FontWeight.Bold else FontWeight.Normal,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
-                Text(
-                    date.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.FRENCH).uppercase(Locale.FRENCH),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = if (i == dates.lastIndex) FontWeight.Bold else FontWeight.Normal,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            }
+            if (goal != null) {
+                // Ligne d'objectif en pointillé, à la hauteur de l'objectif dans la zone des barres.
+                Canvas(Modifier.fillMaxWidth().height(barArea)) {
+                    val y = size.height * (1f - (goal / max).toFloat().coerceIn(0f, 1f))
+                    drawLine(
+                        color = goalColor,
+                        start = Offset(0f, y),
+                        end = Offset(size.width, y),
+                        strokeWidth = 2.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(8.dp.toPx(), 6.dp.toPx())),
+                    )
+                }
             }
         }
     }

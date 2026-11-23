@@ -41,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import com.bidaboss.healthy.ui.WaterFeedback
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
@@ -84,8 +85,12 @@ fun MealEditorScreen(
     val savedFoods by savedFoodsViewModel.foods.collectAsStateWithLifecycle()
     val savedKeys by viewModel.savedKeys.collectAsStateWithLifecycle()
 
+    val feedbackContext = LocalContext.current
     LaunchedEffect(state.finished) {
-        if (state.finished) onClose()
+        if (state.finished) {
+            WaterFeedback.tick(feedbackContext) // petite vibration : le repas est ajouté
+            onClose()
+        }
     }
 
     // Partage Android du fichier d'import : un proche l'ouvre dans son app Healthy.

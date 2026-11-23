@@ -1,5 +1,10 @@
 package com.bidaboss.healthy.ui
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ProvideTextStyle
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -115,6 +120,21 @@ fun PhotoTitle(text: String, modifier: Modifier = Modifier, style: TextStyle = M
         color = Color.White,
         style = style.copy(shadow = Shadow(color = Color.Black.copy(alpha = 0.55f), offset = Offset(0f, 2f), blurRadius = 12f)),
     )
+}
+
+/** Bouton à contour blanc et texte blanc ombré, pour les boutons posés directement sur la photo. */
+@Composable
+fun PhotoOutlinedButton(onClick: () -> Unit, modifier: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier,
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+        border = BorderStroke(1.5.dp, Color.White),
+    ) {
+        ProvideTextStyle(MaterialTheme.typography.labelLarge.copy(shadow = Shadow(color = Color.Black.copy(alpha = 0.55f), offset = Offset(0f, 2f), blurRadius = 12f))) {
+            content()
+        }
+    }
 }
 
 /** Quelle image pour quel onglet et quel thème : 12 décors, 4 par thème (WebP léger dans `drawable-nodpi`). */

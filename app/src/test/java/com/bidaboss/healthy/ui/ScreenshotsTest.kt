@@ -39,7 +39,10 @@ import java.time.LocalDate
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [34], application = HealthyApplication::class, qualifiers = "w390dp-h1500dp-xhdpi")
-class ScreenshotsTest {
+open class ScreenshotsTest {
+    /** Ajouté au nom des images : vide en clair, « -sombre » pour [ScreenshotsDarkTest]. */
+    protected open val suffix = ""
+
     @get:Rule
     val compose = createAndroidComposeRule<ComponentActivity>()
 
@@ -56,7 +59,7 @@ class ScreenshotsTest {
             HealthyTheme(theme) { HealthyApp(importViewModel, importRequests = 0, onPickFile = {}) }
         }
         val out = (System.getenv("SCREENSHOTS_OUT") ?: System.getProperty("screenshots.out"))?.let { File(it).apply { mkdirs() } }
-        listOf("Aujourd'hui" to "aujourdhui", "Repas" to "repas", "Sport" to "sport", "Santé" to "sante", "Moi" to "moi").forEach { (label, file) ->
+        listOf("Accueil" to "aujourdhui", "Repas" to "repas", "Sport" to "sport", "Santé" to "sante", "Moi" to "moi").forEach { (label, file) ->
             val tab = hasText(label) and hasClickAction()
             // Le conteneur lit d'abord la base : on attend que la barre d'onglets apparaisse.
             compose.waitUntil(30_000) { compose.onAllNodes(tab).fetchSemanticsNodes().isNotEmpty() }
@@ -67,7 +70,7 @@ class ScreenshotsTest {
                 val view = compose.activity.window.decorView
                 val bmp = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
                 view.draw(android.graphics.Canvas(bmp))
-                File(out, "${theme.name.lowercase()}-$file.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                File(out, "${theme.name.lowercase()}-$file$suffix.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
             }
         }
     }

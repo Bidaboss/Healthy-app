@@ -124,40 +124,46 @@ private val photoShadow = Shadow(color = Color.Black.copy(alpha = 0.55f), offset
 fun TodayHeader(state: HeaderUiState, onOpenBadges: () -> Unit, modifier: Modifier = Modifier) {
     val texts = ThemeTexts.current
     val white = Color.White
-    Row(
+    // Même marge de 16 dp que les cartes dessous : le bonjour est aligné à gauche avec elles.
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 24.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Pousse(state.mood, size = 104.dp, growth = state.growth)
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            texts.dayTitle?.let {
-                Text(it, color = white, style = MaterialTheme.typography.labelLarge.copy(shadow = photoShadow), fontWeight = FontWeight.Bold)
+        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                texts.dayTitle?.let {
+                    Text(it, color = white, style = MaterialTheme.typography.labelLarge.copy(shadow = photoShadow), fontWeight = FontWeight.Bold)
+                }
+                Text(
+                    state.date.format(dayFormat).replaceFirstChar { it.titlecase(Locale.FRENCH) },
+                    color = white.copy(alpha = 0.92f),
+                    style = MaterialTheme.typography.labelLarge.copy(shadow = photoShadow),
+                )
+                Text(
+                    texts.greeting(state.firstName),
+                    color = white,
+                    style = MaterialTheme.typography.headlineSmall.copy(shadow = photoShadow),
+                    fontWeight = FontWeight.Black,
+                )
             }
-            Text(
-                state.date.format(dayFormat).replaceFirstChar { it.titlecase(Locale.FRENCH) },
-                color = white.copy(alpha = 0.92f),
-                style = MaterialTheme.typography.labelLarge.copy(shadow = photoShadow),
-            )
-            Text(
-                texts.greeting(state.firstName),
-                color = white,
-                style = MaterialTheme.typography.headlineSmall.copy(shadow = photoShadow),
-                fontWeight = FontWeight.Black,
-            )
-            Text(
-                texts.headerMessage(state.mood, state.mealCount),
-                color = white,
-                style = MaterialTheme.typography.bodyLarge.copy(shadow = photoShadow),
-                fontWeight = FontWeight.SemiBold,
-            )
-            if (state.streakHint.isNotEmpty()) {
-                Text(state.streakHint, color = white.copy(alpha = 0.92f), style = MaterialTheme.typography.bodySmall.copy(shadow = photoShadow))
+            StreakBadge(state.streakWeeks, texts, onOpenBadges)
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Pousse(state.mood, size = 136.dp, growth = state.growth)
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    texts.headerMessage(state.mood, state.mealCount),
+                    color = white,
+                    style = MaterialTheme.typography.bodyLarge.copy(shadow = photoShadow),
+                    fontWeight = FontWeight.SemiBold,
+                )
+                if (state.streakHint.isNotEmpty()) {
+                    Text(state.streakHint, color = white.copy(alpha = 0.92f), style = MaterialTheme.typography.bodySmall.copy(shadow = photoShadow))
+                }
             }
         }
-        StreakBadge(state.streakWeeks, texts, onOpenBadges)
     }
 }
 

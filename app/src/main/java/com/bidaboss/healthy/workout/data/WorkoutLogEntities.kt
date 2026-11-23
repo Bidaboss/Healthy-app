@@ -72,6 +72,13 @@ data class ActivityEntity(
     @ColumnInfo(name = "body_parts") val bodyParts: String? = null,
     /** Identifiant de la séance de la montre (Health Connect) dont elle vient, pour ne l'ajouter qu'une fois (v10). */
     @ColumnInfo(name = "health_id") val healthId: String? = null,
+    /** Trajet enregistré dont elle vient (v15), null si ajoutée sans trajet ou si le trajet a été supprimé. */
+    @ColumnInfo(name = "route_id") val routeId: Long? = null,
+    /** Copie du nom du trajet et du sens (`aller`, `retour`, `aller_retour`) : l'historique ne change pas si le trajet change (v15). */
+    @ColumnInfo(name = "route_name") val routeName: String? = null,
+    @ColumnInfo(name = "route_direction") val routeDirection: String? = null,
+    /** Distance parcourue en km, sens compris (v15). */
+    @ColumnInfo(name = "distance_km") val distanceKm: Double? = null,
 )
 
 data class LogWithExercises(

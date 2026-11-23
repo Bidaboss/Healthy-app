@@ -282,6 +282,27 @@ class MigrationTest {
     }
 
     @Test
+    fun `de la version 15 a la 16, les activites sont conservees sans trajet et la table des trajets existe`() {
+        helper.createDatabase(DB_NAME, 15).use { db ->
+            db.execSQL(
+                "INSERT INTO activities (id, local_date, type, duration_min, created_at_epoch_ms) " +
+                    "VALUES (1, '2026-11-20', 'Marche', 40, 1)",
+            )
+        }
+        val migrated = helper.runMigrationsAndValidate(DB_NAME, 16, true, Migrations.MIGRATION_15_16)
+        migrated.query("SELECT type, duration_min, route_id, route_name, route_direction, distance_km FROM activities").use {
+            assertTrue(it.moveToFirst())
+            assertEquals("Marche", it.getString(0))
+            assertEquals(40, it.getInt(1))
+            assertTrue(it.isNull(2) && it.isNull(3) && it.isNull(4) && it.isNull(5))
+        }
+        migrated.query("SELECT COUNT(*) FROM saved_routes").use {
+            assertTrue(it.moveToFirst())
+            assertEquals(0, it.getInt(0))
+        }
+    }
+
+    @Test
     fun `chaque changement de version a sa migration`() {
         val covered = Migrations.ALL.map { it.startVersion to it.endVersion }
         assertEquals((1 until HealthyDatabase.VERSION).map { it to it + 1 }, covered)

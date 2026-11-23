@@ -39,6 +39,7 @@ import com.bidaboss.healthy.update.data.UpdateStore
 import com.bidaboss.healthy.workout.data.ReminderSettingsStore
 import com.bidaboss.healthy.workout.data.SportProfileRepository
 import com.bidaboss.healthy.workout.data.WorkoutLogRepository
+import com.bidaboss.healthy.workout.data.route.SavedRouteRepository
 import com.bidaboss.healthy.workout.data.WorkoutRepository
 import com.bidaboss.healthy.workout.reminder.SessionReminderScheduler
 import kotlinx.coroutines.flow.Flow
@@ -59,6 +60,7 @@ class AppContainer(context: Context) {
     val scannedProductRepository = ScannedProductRepository(database.scannedProductDao(), foodSearchRepository)
     val workoutRepository = WorkoutRepository(database.workoutDao())
     val workoutLogRepository = WorkoutLogRepository(database.workoutLogDao(), transactions)
+    val savedRouteRepository = SavedRouteRepository(database.savedRouteDao(), transactions)
     val backupRepository = BackupRepository(database, transactions)
     val importRepository =
         ImportRepository(transactions, database.importDao(), mealRepository, workoutRepository, backupRepository)

@@ -10,6 +10,10 @@ import com.bidaboss.healthy.workout.data.SessionLog
 import com.bidaboss.healthy.workout.data.WorkoutLogRepository
 import com.bidaboss.healthy.workout.data.WorkoutPlan
 import com.bidaboss.healthy.workout.data.WorkoutRepository
+import com.bidaboss.healthy.workout.data.RouteUse
+import com.bidaboss.healthy.workout.data.route.SavedRoute
+import com.bidaboss.healthy.workout.data.route.SavedRouteRepository
+import com.bidaboss.healthy.core.route.RouteDirection
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -51,6 +55,7 @@ class WorkoutViewModel(
     referenceWeightKg: (LocalDate) -> Flow<Double?> = { flowOf(null) },
     /** La montre est-elle connectée ? Fourni par AppContainer (Sport ne dépend pas du paquet `health`). */
     private val watchConnected: suspend () -> Boolean = { false },
+    private val routeRepository: SavedRouteRepository? = null,
     private val today: () -> LocalDate = { LocalDate.now() },
     private val now: () -> Long = { System.currentTimeMillis() },
 ) : ViewModel() {
@@ -103,6 +108,18 @@ class WorkoutViewModel(
     fun addActivity(type: String, durationMin: Int, date: LocalDate, bodyParts: Set<BodyPart>) {
         val day = minOf(date, today())
         viewModelScope.launch { logRepository.addActivity(type, durationMin, day, now(), bodyParts) }
+    }
+
+    /** Trajets enregistrés, pour la section « Mes trajets » de l'ajout d'activité. */
+    val routes: StateFlow<List<SavedRoute>> = (routeRepository?.observeAll() ?: flowOf(emptyList()))
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** « Ajouter ce trajet » : une activité de la distance du trajet (sens compris), durée estimée à vélo ou choisie. */
+    fun addRouteActivity(type: String, route: SavedRoute, direction: RouteDirection, durationMin: Int, date: LocalDate) {
+        val oneWay = route.distanceKm ?: return
+        val day = minOf(date, today())
+        val use = RouteUse(route.id, route.name, direction, direction.distanceKm(oneWay))
+        viewModelScope.launch { logRepository.addActivity(type, durationMin, day, now(), route = use) }
     }
 
     /** Prépare le bilan des 4 dernières semaines pour l'envoyer à Claude. */

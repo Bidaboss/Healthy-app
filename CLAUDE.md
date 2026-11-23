@@ -28,8 +28,9 @@ Claude prépare des fichiers (repas, plan) dans les fils du projet, l'app les **
   on passe par un repository et un ViewModel.
 - Room : `exportSchema = true`, une vraie migration à chaque changement de schéma,
   jamais `fallbackToDestructiveMigration`.
-- Réseau : uniquement Open Food Facts, et le dossier Google Drive des mises à jour (lecture seule, sans
-  compte). Tout le reste fonctionne hors ligne.
+- Réseau : uniquement Open Food Facts, le dossier Google Drive des mises à jour (lecture seule, sans
+  compte) et, pour le seul calcul de la distance d'un trajet à vélo, OpenStreetMap (voir `docs/architecture.md`,
+  « Trajets : calcul de distance »). Tout le reste fonctionne hors ligne.
 - Signature : une seule clé, stockée dans les **secrets de GitHub Actions** (voir `docs/architecture.md`,
   « Signature de l'APK »), jamais dans le dépôt. Ne jamais la remplacer ni la régénérer. Aucun secret, clé,
   lien privé ni donnée personnelle réelle (profil, repas) dans le dépôt, ni dans les tests ni les exemples.

@@ -266,6 +266,34 @@ Téléchargement limité à 100 Mo. L'heure de la vérification automatique n'es
 vérification réussie : sans réseau, on réessaie au retour suivant. « Plus tard » met la version de côté
 24 h (`UpdateStore.snoozedVersionCode`) ; le bouton de Réglages la montre toujours.
 
+### Trajets : calcul de distance (OpenStreetMap)
+
+Troisième et dernière utilisation du réseau (choix du propriétaire, 23/11/2026, lot 3 de la refonte) : `workout/data/route/`.
+Un trajet enregistré (« Mes trajets ») a un départ, 0 à n étapes et une arrivée, saisis comme adresses. Sa distance se
+calcule **une seule fois**, quand l'utilisateur appuie sur « Calculer la distance », puis elle est enregistrée avec le
+trajet : ensuite tout marche hors ligne.
+
+Services, gratuits et sans clé ni compte (deux hôtes, tous deux gérés par la communauté OpenStreetMap) :
+
+1. `nominatim.openstreetmap.org/search` : transforme chaque adresse en point GPS. Une requête par adresse, au plus une
+   par seconde (règle d'usage de Nominatim), `User-Agent` générique `Healthy-app/<version de l'app>` (jamais un nom, un e-mail ni un
+   identifiant de l'utilisateur), `format=jsonv2`, `limit=1`, aucun détail demandé.
+2. `routing.openstreetmap.de/routed-bike/route/v1/driving/<lon,lat;…>` (OSRM, profil vélo) : renvoie la distance par la
+   route (`overview=false`, rien d'autre). Une requête par trajet, qui n'envoie que les coordonnées des points.
+
+Ce qui sort du téléphone : le texte des adresses saisies (vers Nominatim) puis leurs coordonnées (vers le serveur de
+calcul), avec l'adresse IP du téléphone, comme toute requête web. Rien d'autre : ni nom du trajet, ni profil, ni
+historique d'activités. Les adresses sont enregistrées **en local seulement** (table `saved_routes`) et ne sont jamais
+envoyées ailleurs ; elles sont dans la sauvegarde du propriétaire (fichier qu'il garde lui-même) comme le reste des
+données. Une adresse qui change ne déclenche rien : l'utilisateur doit rappuyer sur « Calculer la distance ».
+
+Secours hors ligne : le calcul est facultatif. Sans internet (ou si un service refuse), l'écran dit simplement que le
+calcul est impossible pour l'instant et propose « Saisir la distance moi-même » ; un trajet à distance saisie à la main est un
+trajet comme un autre. Chaque panne a sa raison (adresse introuvable, serveur injoignable, délai dépassé, code HTTP,
+réponse illisible) et un message simple, comme pour Open Food Facts. Délai de 10 s par requête. Ces services n'ont aucune garantie de
+disponibilité : l'app n'en dépend jamais pour fonctionner. La lecture des réponses est dans `:core`
+(`RouteGeo`, testée avec des réponses d'exemple) ; aucune bibliothèque de cartes, aucun SDK, aucune carte affichée.
+
 ## Contrôles automatiques (GitHub Actions)
 
 Tests de `:core`, tests de `:app`, lint Android, construction de l'APK, à chaque push.

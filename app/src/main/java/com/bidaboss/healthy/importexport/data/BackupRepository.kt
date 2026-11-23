@@ -105,6 +105,7 @@ class BackupRepository(private val database: HealthyDatabase, private val transa
             "scanned_products",
             "watch_days",
             "saved_foods",
+            "saved_routes",
         )
     }
 }

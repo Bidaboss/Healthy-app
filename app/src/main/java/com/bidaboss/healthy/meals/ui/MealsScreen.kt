@@ -91,6 +91,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+private val timeFormat = DateTimeFormatter.ofPattern("HH:mm", Locale.FRENCH)
 private val dayFormat = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.FRENCH)
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -448,7 +449,8 @@ private fun MealCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = meal.title ?: meal.type.label,
+                    // Le type de repas est déjà sur la pastille au-dessus : sans titre, la carte donne l'heure.
+                    text = meal.title ?: meal.eatenAt.format(timeFormat),
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f),
                 )

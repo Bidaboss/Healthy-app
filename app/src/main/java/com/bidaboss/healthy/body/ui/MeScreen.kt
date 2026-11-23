@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeJoin
@@ -126,7 +127,12 @@ fun MeScreen(
 /** Petit titre de section posé sur la photo : blanc, majuscules, ombre douce. */
 @Composable
 private fun SectionLabel(text: String) {
-    PhotoTitle(text, modifier = Modifier.padding(start = 6.dp), style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 0.5.sp))
+    // Sur une pastille sombre : lisible sur toutes les parties de la photo, y compris là où elle se fond dans le fond clair.
+    PhotoTitle(
+        text,
+        modifier = Modifier.background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(12.dp)).padding(horizontal = 10.dp, vertical = 4.dp),
+        style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 0.5.sp),
+    )
 }
 
 @Composable
@@ -138,7 +144,7 @@ private fun ProfileCard(state: MeUiState, onOpen: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Pousse(if (state.progress.unlockedBadges > 0) Mood.PROUD else Mood.HAPPY, size = 72.dp, growth = state.progress.growth)
+            Pousse(if (state.progress.unlockedBadges > 0) Mood.PROUD else Mood.HAPPY, size = 88.dp, growth = state.progress.growth)
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(profile?.firstName?.takeIf { it.isNotBlank() } ?: "Mon profil", style = MaterialTheme.typography.titleLarge)
                 if (profile == null) {

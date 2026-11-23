@@ -98,7 +98,7 @@ private fun LastNight(night: WatchDayRecord, nights: List<WatchDayRecord>) {
 
 @Composable
 private fun Fact(label: String, value: String) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
         Text(value, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
     }

@@ -19,6 +19,7 @@ import com.bidaboss.healthy.meals.data.FoodSearchRepository
 import com.bidaboss.healthy.meals.data.HabitDismissStore
 import com.bidaboss.healthy.meals.data.MealRepository
 import com.bidaboss.healthy.meals.data.RecipeRepository
+import com.bidaboss.healthy.meals.data.SavedFoodRepository
 import com.bidaboss.healthy.meals.data.ScannedProductRepository
 import com.bidaboss.healthy.settings.data.AppearanceStore
 import com.bidaboss.healthy.settings.data.MotivationRepository
@@ -53,6 +54,7 @@ class AppContainer(context: Context) {
     val importParser = ImportParser()
     val mealRepository = MealRepository(database.mealDao(), transactions)
     val recipeRepository = RecipeRepository(database.recipeDao(), transactions)
+    val savedFoodRepository = SavedFoodRepository(database.savedFoodDao())
     val habitDismissStore = HabitDismissStore(context)
     val foodSearchRepository = FoodSearchRepository()
     val scannedProductRepository = ScannedProductRepository(database.scannedProductDao(), foodSearchRepository)

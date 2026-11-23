@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 15,
-    "identityHash": "e631ebe45b24f420e1d79aa7624d3e28",
+    "identityHash": "c6d0548ccf08e4d24a18e11766f779d4",
     "entities": [
       {
         "tableName": "meals",
@@ -722,7 +722,7 @@
       },
       {
         "tableName": "activities",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `local_date` TEXT NOT NULL, `type` TEXT NOT NULL, `duration_min` INTEGER NOT NULL, `notes` TEXT, `created_at_epoch_ms` INTEGER NOT NULL, `body_parts` TEXT, `health_id` TEXT, `route_id` INTEGER, `route_name` TEXT, `route_direction` TEXT, `distance_km` REAL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `local_date` TEXT NOT NULL, `type` TEXT NOT NULL, `duration_min` INTEGER NOT NULL, `notes` TEXT, `created_at_epoch_ms` INTEGER NOT NULL, `body_parts` TEXT, `health_id` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
@@ -768,26 +768,6 @@
             "fieldPath": "healthId",
             "columnName": "health_id",
             "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "routeId",
-            "columnName": "route_id",
-            "affinity": "INTEGER"
-          },
-          {
-            "fieldPath": "routeName",
-            "columnName": "route_name",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "routeDirection",
-            "columnName": "route_direction",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "distanceKm",
-            "columnName": "distance_km",
-            "affinity": "REAL"
           }
         ],
         "primaryKey": {
@@ -1341,8 +1321,8 @@
         }
       },
       {
-        "tableName": "saved_routes",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `start` TEXT NOT NULL, `stops` TEXT NOT NULL, `destination` TEXT NOT NULL, `distance_km` REAL, `distance_source` TEXT, `created_at_epoch_ms` INTEGER NOT NULL)",
+        "tableName": "saved_foods",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `name_key` TEXT NOT NULL, `default_portion_g` REAL, `kcal` REAL NOT NULL, `protein_g` REAL, `carbs_g` REAL, `fat_g` REAL, `fiber_g` REAL, `source` TEXT NOT NULL, `drink` TEXT, `created_at_epoch_ms` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -1357,31 +1337,51 @@
             "notNull": true
           },
           {
-            "fieldPath": "start",
-            "columnName": "start",
+            "fieldPath": "nameKey",
+            "columnName": "name_key",
             "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "stops",
-            "columnName": "stops",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "end",
-            "columnName": "destination",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "distanceKm",
-            "columnName": "distance_km",
+            "fieldPath": "defaultPortionG",
+            "columnName": "default_portion_g",
             "affinity": "REAL"
           },
           {
-            "fieldPath": "distanceSource",
-            "columnName": "distance_source",
+            "fieldPath": "kcal",
+            "columnName": "kcal",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "proteinG",
+            "columnName": "protein_g",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "carbsG",
+            "columnName": "carbs_g",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "fatG",
+            "columnName": "fat_g",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "fiberG",
+            "columnName": "fiber_g",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "drink",
+            "columnName": "drink",
             "affinity": "TEXT"
           },
           {
@@ -1396,12 +1396,23 @@
           "columnNames": [
             "id"
           ]
-        }
+        },
+        "indices": [
+          {
+            "name": "index_saved_foods_name_key",
+            "unique": true,
+            "columnNames": [
+              "name_key"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_saved_foods_name_key` ON `${TABLE_NAME}` (`name_key`)"
+          }
+        ]
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e631ebe45b24f420e1d79aa7624d3e28')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c6d0548ccf08e4d24a18e11766f779d4')"
     ]
   }
 }

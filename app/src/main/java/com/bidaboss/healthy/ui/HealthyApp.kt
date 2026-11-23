@@ -34,7 +34,12 @@ import androidx.navigation.navArgument
 import com.bidaboss.healthy.body.ui.MeScreen
 import com.bidaboss.healthy.body.ui.ProfileScreen
 import com.bidaboss.healthy.body.ui.WeightScreen
+import com.bidaboss.healthy.importexport.ui.ImportMealCard
 import com.bidaboss.healthy.importexport.ui.ImportScreen
+import com.bidaboss.healthy.importexport.ui.pasteFromClipboard
+import com.bidaboss.healthy.meals.ui.SavedFoodEditorScreen
+import com.bidaboss.healthy.meals.ui.SavedFoodsScreen
+import androidx.compose.ui.platform.LocalContext
 import com.bidaboss.healthy.importexport.ui.ImportViewModel
 import com.bidaboss.healthy.meals.ui.MealEditorScreen
 import com.bidaboss.healthy.meals.ui.MealsScreen
@@ -105,6 +110,12 @@ private object Routes {
     const val NO_MEAL = -1L
 
     const val RECIPES = "recipes"
+    const val SAVED_FOODS = "saved_foods"
+    const val SAVED_FOOD_EDITOR = "saved_food_editor"
+    const val ARG_FOOD_ID = "foodId"
+
+    /** [foodId] nul = nouvel aliment. */
+    fun savedFoodEditor(foodId: Long?) = "$SAVED_FOOD_EDITOR/${foodId ?: NO_MEAL}"
     const val SCANNED_PRODUCTS = "scanned_products"
     const val RECIPE_EDITOR = "recipe_editor"
     const val ARG_RECIPE_ID = "recipeId"
@@ -147,7 +158,8 @@ private fun tabRouteOf(route: String?): String? = when {
     // LOT 1 : Aujourd'hui
     route == Routes.TODAY || route == Routes.WATER || route == Routes.WEEKLY_RECAP -> Routes.TODAY
     // LOT 2 : Repas
-    route == Routes.MEALS || route == Routes.SCANNED_PRODUCTS || route == Routes.RECIPES ||
+    route == Routes.MEALS || route == Routes.SCANNED_PRODUCTS || route == Routes.RECIPES || route == Routes.SAVED_FOODS ||
+        route.startsWith(Routes.SAVED_FOOD_EDITOR) ||
         route.startsWith(Routes.MEAL_EDITOR) || route.startsWith(Routes.RECIPE_EDITOR) -> Routes.MEALS
     // LOT 3 : Sport et trajets
     route == Routes.WORKOUT || route.startsWith(Routes.SESSION_RUN) || route == Routes.ADD_ACTIVITY ||
@@ -253,13 +265,36 @@ private fun MainNavigation(
             composable(Routes.BADGES) { BadgesScreen(onClose = { navController.popBackStack() }) }
             composable(Routes.WEEKLY_RECAP) { WeeklyRecapScreen(onClose = { navController.popBackStack() }) }
             composable(Routes.MEALS) {
+                val context = LocalContext.current
                 MealsScreen(
                     onAddMeal = { date -> navController.navigate(Routes.mealEditor(null, date)) },
                     onEditMeal = { mealId -> navController.navigate(Routes.mealEditor(mealId, LocalDate.now())) },
-                    onImport = { navController.navigate(Routes.IMPORT) { launchSingleTop = true } },
                     onOpenRecipes = { navController.navigate(Routes.RECIPES) { launchSingleTop = true } },
-                    onOpenScannedProducts = { navController.navigate(Routes.SCANNED_PRODUCTS) { launchSingleTop = true } },
+                    onOpenSavedFoods = { navController.navigate(Routes.SAVED_FOODS) { launchSingleTop = true } },
+                    onCreateFood = { navController.navigate(Routes.savedFoodEditor(null)) },
+                    onImportFromAi = { pasteFromClipboard(context, importViewModel) },
+                    importCard = {
+                        ImportMealCard(
+                            viewModel = importViewModel,
+                            onPickFile = onPickFile,
+                            onOpenImport = { navController.navigate(Routes.IMPORT) { launchSingleTop = true } },
+                        )
+                    },
                 )
+            }
+            composable(Routes.SAVED_FOODS) {
+                SavedFoodsScreen(
+                    onOpenFood = { id -> navController.navigate(Routes.savedFoodEditor(id)) },
+                    onOpenScannedProducts = { navController.navigate(Routes.SCANNED_PRODUCTS) { launchSingleTop = true } },
+                    onClose = { navController.popBackStack() },
+                )
+            }
+            composable(
+                route = "${Routes.SAVED_FOOD_EDITOR}/{${Routes.ARG_FOOD_ID}}",
+                arguments = listOf(navArgument(Routes.ARG_FOOD_ID) { type = NavType.LongType }),
+            ) { entry ->
+                val foodId = entry.arguments?.getLong(Routes.ARG_FOOD_ID) ?: Routes.NO_MEAL
+                SavedFoodEditorScreen(foodId = foodId.takeIf { it != Routes.NO_MEAL }, onClose = { navController.popBackStack() })
             }
             composable(Routes.SCANNED_PRODUCTS) { ScannedProductsScreen(onClose = { navController.popBackStack() }) }
             composable(Routes.RECIPES) {
@@ -292,6 +327,7 @@ private fun MainNavigation(
                     initialDate = date?.let(LocalDate::parse) ?: LocalDate.now(),
                     onClose = { navController.popBackStack() },
                     onOpenRecipes = { navController.navigate(Routes.RECIPES) { launchSingleTop = true } },
+                    onOpenSavedFoods = { navController.navigate(Routes.SAVED_FOODS) { launchSingleTop = true } },
                 )
             }
             composable(Routes.WORKOUT) {

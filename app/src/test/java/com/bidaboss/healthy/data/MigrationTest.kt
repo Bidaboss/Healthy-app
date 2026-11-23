@@ -264,14 +264,32 @@ class MigrationTest {
     }
 
     @Test
-    fun `de la version 14 a la 15, les activites sont conservees sans trajet et la table des trajets existe`() {
+    fun `de la version 14 a la 15, les repas sont conserves et mes aliments existent, un nom une seule fois`() {
         helper.createDatabase(DB_NAME, 14).use { db ->
+            db.execSQL(
+                "INSERT INTO meals (id, import_id, eaten_at_epoch_ms, local_date, meal_type, created_at_epoch_ms) " +
+                    "VALUES (1, 'a', 1000, '2026-11-23', 'dejeuner', 1000)",
+            )
+        }
+        val migrated = helper.runMigrationsAndValidate(DB_NAME, 15, true, Migrations.MIGRATION_14_15)
+        migrated.query("SELECT COUNT(*) FROM meals").use { assertTrue(it.moveToFirst()); assertEquals(1, it.getInt(0)) }
+        migrated.query("SELECT COUNT(*) FROM saved_foods").use { assertTrue(it.moveToFirst()); assertEquals(0, it.getInt(0)) }
+        val insert = "INSERT INTO saved_foods (name, name_key, default_portion_g, kcal, protein_g, carbs_g, fat_g, fiber_g, " +
+            "source, drink, created_at_epoch_ms) VALUES ('Skyr', 'skyr', 150.0, 90.0, NULL, NULL, NULL, NULL, 'manuel', NULL, 1)"
+        migrated.execSQL(insert)
+        val duplicate = runCatching { migrated.execSQL(insert) }
+        assertTrue("deux aliments au même nom doivent être refusés", duplicate.isFailure)
+    }
+
+    @Test
+    fun `de la version 15 a la 16, les activites sont conservees sans trajet et la table des trajets existe`() {
+        helper.createDatabase(DB_NAME, 15).use { db ->
             db.execSQL(
                 "INSERT INTO activities (id, local_date, type, duration_min, created_at_epoch_ms) " +
                     "VALUES (1, '2026-11-20', 'Marche', 40, 1)",
             )
         }
-        val migrated = helper.runMigrationsAndValidate(DB_NAME, 15, true, Migrations.MIGRATION_14_15)
+        val migrated = helper.runMigrationsAndValidate(DB_NAME, 16, true, Migrations.MIGRATION_15_16)
         migrated.query("SELECT type, duration_min, route_id, route_name, route_direction, distance_km FROM activities").use {
             assertTrue(it.moveToFirst())
             assertEquals("Marche", it.getString(0))

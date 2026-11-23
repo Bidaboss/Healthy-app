@@ -179,7 +179,7 @@ private fun SourceButtons(intro: String, onPaste: () -> Unit, onPickFile: () -> 
 }
 
 @Composable
-private fun MealPreview(meal: ImportedMeal) {
+internal fun MealPreview(meal: ImportedMeal) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(meal.title ?: meal.type.label, style = MaterialTheme.typography.titleLarge)
@@ -239,7 +239,7 @@ private fun PlanPreview(plan: ImportedPlan) {
     }
 }
 
-private fun pasteFromClipboard(context: Context, viewModel: ImportViewModel) {
+internal fun pasteFromClipboard(context: Context, viewModel: ImportViewModel) {
     val clipboard = context.getSystemService(ClipboardManager::class.java)
     val text = clipboard?.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(context)?.toString()
     if (text.isNullOrBlank()) {

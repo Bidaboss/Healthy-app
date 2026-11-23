@@ -2,6 +2,7 @@ package com.bidaboss.healthy.update.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bidaboss.healthy.BuildConfig
 import com.bidaboss.healthy.core.update.RemoteApk
 import com.bidaboss.healthy.update.data.UpdateCheck
 import com.bidaboss.healthy.update.data.UpdateException
@@ -35,20 +36,31 @@ class UpdateViewModel(
     private val repository: UpdateRepository,
     private val store: UpdateStore,
     private val now: () -> Long = { System.currentTimeMillis() },
+    private val currentVersionCode: Int = BuildConfig.VERSION_CODE,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<UpdateUiState>(UpdateUiState.Hidden)
     val state: StateFlow<UpdateUiState> = _state.asStateFlow()
     private var job: Job? = null
 
+    private val _banner = MutableStateFlow(bannerVersionName())
+
+    /** Nom de la version à proposer dans le bandeau (vue lors d'une vérification, ou par la notification du matin), sinon null. */
+    val banner: StateFlow<String?> = _banner.asStateFlow()
+
+    private fun bannerVersionName(): String? =
+        store.availableVersionCode.takeIf { it > currentVersionCode }?.let { "0.1.$it" }
+
     fun checkAutomatically() {
+        _banner.value = bannerVersionName()
         // Rien pendant qu'une fenêtre est ouverte ou qu'une vérification tourne déjà.
         if (_state.value != UpdateUiState.Hidden || job?.isActive == true) return
         if (now() - store.lastAutoCheckEpochMs < AUTO_CHECK_INTERVAL_MS) return
         job = viewModelScope.launch {
-            val result = runCatching { repository.check() }.getOrNull() ?: return@launch
+            val result = runCatching { repository.checkAndRecord() }.getOrNull() ?: return@launch
             // Noté seulement après une vérification réussie : sans réseau, on réessaie au prochain retour.
             store.lastAutoCheckEpochMs = now()
+            _banner.value = bannerVersionName()
             if (result is UpdateCheck.Available && !isSnoozed(result.apk.versionCode) && _state.value == UpdateUiState.Hidden) {
                 _state.value = UpdateUiState.Available(result.apk)
             }
@@ -77,7 +89,7 @@ class UpdateViewModel(
         job?.cancel()
         _state.value = UpdateUiState.Checking
         job = viewModelScope.launch {
-            _state.value = runCatching { repository.check() }.fold(
+            _state.value = runCatching { repository.checkAndRecord() }.also { _banner.value = bannerVersionName() }.fold(
                 onSuccess = {
                     when (it) {
                         UpdateCheck.NoFolder -> UpdateUiState.NoFolder

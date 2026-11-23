@@ -265,6 +265,15 @@ peut pas créer de fichier, seulement remplacer le contenu de l'APK au plus gran
 et reste secret. Sans le secret, l'étape est sautée (le CI reste vert) ; elle échoue si le dossier n'a pas de
 `healthy-<numéro>.apk` ou si le numéro n'est pas plus récent. Les autres APK du dossier ne sont pas touchés.
 
+**Vérification sans ouvrir l'app** (demande du propriétaire, 23/11/2026) : `UpdateCheckScheduler` programme chaque jour vers 10 h
+une alarme non exacte (comme les rappels : elle programme la suivante, et le redémarrage ou la mise à jour de l'app la
+reprogramme). `UpdateCheckReceiver` fait la même vérification que l'app (`UpdateRepository.checkAndRecord`) et, s'il y a une
+version plus récente jamais annoncée (`UpdateStore.notifiedVersionCode`), envoie une notification qui ouvre l'app. Sans réseau,
+rien ne s'affiche, on réessaie le lendemain. Sans lien de dossier (build local), rien n'est programmé. La version trouvée est
+gardée (`UpdateStore.availableVersionCode`) : `UpdateBanner`, en haut de l'app, la montre tant qu'elle n'est pas installée,
+même après « Plus tard » ou sans permission de notification ; un appui ouvre la fenêtre de mise à jour. Aucun nouveau
+domaine réseau : la notification ne contient jamais le lien du dossier.
+
 Téléchargement limité à 100 Mo. L'heure de la vérification automatique n'est notée qu'après une
 vérification réussie : sans réseau, on réessaie au retour suivant. « Plus tard » met la version de côté
 24 h (`UpdateStore.snoozedVersionCode`) ; le bouton de Réglages la montre toujours.

@@ -112,6 +112,33 @@ class UpdateTest {
     }
 
     @Test
+    fun `le bandeau montre la version trouvee, meme mise de cote, et disparait une fois a jour`() {
+        var now = 1_000_000_000L
+        val store = store()
+        val viewModel = UpdateViewModel(repository(store), store, now = { now }, currentVersionCode = 50)
+        assertEquals(null, viewModel.banner.value)
+
+        viewModel.checkAutomatically()
+        assertEquals("0.1.57", viewModel.banner.value)
+        viewModel.later()
+        assertEquals("0.1.57", viewModel.banner.value)
+
+        // Au prochain lancement, le bandeau se relit de la valeur gardee (aussi posee par la notification du matin).
+        assertEquals("0.1.57", UpdateViewModel(repository(store), store, now = { now }, currentVersionCode = 50).banner.value)
+        // Une fois la 57 installee, plus de bandeau.
+        assertEquals(null, UpdateViewModel(repository(store, current = 57), store, now = { now }, currentVersionCode = 57).banner.value)
+    }
+
+    @Test
+    fun `checkAndRecord note la version trouvee et l'efface quand l'app est a jour`() = runBlocking {
+        val store = store()
+        repository(store).checkAndRecord()
+        assertEquals(57, store.availableVersionCode)
+        repository(store, current = 57).checkAndRecord()
+        assertEquals(0, store.availableVersionCode)
+    }
+
+    @Test
     fun `sans reseau on reessaie au prochain retour, sans attendre`() {
         var now = 1_000_000_000L
         var offline = true

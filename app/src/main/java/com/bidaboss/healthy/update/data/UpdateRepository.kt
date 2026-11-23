@@ -44,6 +44,15 @@ class UpdateRepository(
         AppUpdate.latest(files, currentVersionCode)?.let { UpdateCheck.Available(it) } ?: UpdateCheck.UpToDate
     }
 
+    /** Comme [check], et note la version trouvée pour le bandeau de l'app (0 si l'app est à jour). */
+    suspend fun checkAndRecord(): UpdateCheck = check().also {
+        when (it) {
+            is UpdateCheck.Available -> store.availableVersionCode = it.apk.versionCode
+            UpdateCheck.UpToDate -> store.availableVersionCode = 0
+            UpdateCheck.NoFolder -> Unit
+        }
+    }
+
     /** Télécharge l'APK et le vérifie ; lève une [UpdateException] avec un message en français sinon. */
     suspend fun download(apk: RemoteApk, onProgress: (Float) -> Unit): File = withContext(io) {
         val dir = File(cacheDir, DIR).apply { mkdirs() }

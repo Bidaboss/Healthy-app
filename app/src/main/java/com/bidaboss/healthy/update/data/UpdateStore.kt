@@ -25,7 +25,19 @@ class UpdateStore(context: Context, val folderLink: String = BuildConfig.UPDATE_
         get() = prefs.getLong(KEY_SNOOZED_AT, 0L)
         set(value) = prefs.edit { putLong(KEY_SNOOZED_AT, value) }
 
+    /** Dernière version plus récente vue dans le dossier (0 = aucune) : sert au bandeau et à la notification. */
+    var availableVersionCode: Int
+        get() = prefs.getInt(KEY_AVAILABLE_VERSION, 0)
+        set(value) = prefs.edit { putInt(KEY_AVAILABLE_VERSION, value) }
+
+    /** Dernière version déjà annoncée par une notification : on n'en envoie qu'une par version. */
+    var notifiedVersionCode: Int
+        get() = prefs.getInt(KEY_NOTIFIED_VERSION, 0)
+        set(value) = prefs.edit { putInt(KEY_NOTIFIED_VERSION, value) }
+
     private companion object {
+        const val KEY_AVAILABLE_VERSION = "available_version"
+        const val KEY_NOTIFIED_VERSION = "notified_version"
         const val KEY_LAST_CHECK = "last_auto_check"
         const val KEY_SNOOZED_VERSION = "snoozed_version"
         const val KEY_SNOOZED_AT = "snoozed_at"

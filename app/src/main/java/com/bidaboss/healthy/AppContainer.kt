@@ -39,6 +39,7 @@ import com.bidaboss.healthy.body.data.MaintenanceInfo
 import com.bidaboss.healthy.today.data.WeeklyRecapRepository
 import com.bidaboss.healthy.today.data.WeeklyRecapStore
 import com.bidaboss.healthy.update.data.ApkInspector
+import com.bidaboss.healthy.update.data.UpdateCheckScheduler
 import com.bidaboss.healthy.update.data.UpdateRepository
 import com.bidaboss.healthy.update.data.UpdateStore
 import com.bidaboss.healthy.workout.data.ReminderSettingsStore
@@ -92,6 +93,7 @@ class AppContainer(context: Context) {
     val waterReminderStore = WaterReminderStore(context)
     val waterReminderScheduler = WaterReminderScheduler(context.applicationContext)
     val updateStore = UpdateStore(context)
+    val updateCheckScheduler = UpdateCheckScheduler(context.applicationContext) { updateStore.folderLink.isNotBlank() }
     val updateRepository = UpdateRepository(updateStore, context.cacheDir, inspectApk = { file -> ApkInspector.read(context, file) })
     val watchRepository = WatchRepository(HealthConnectSource(context), WatchIgnoredStore(context), WatchHistory(database.watchDayDao()))
     /** Ma montre et Sport ne s'importent pas : AppContainer leur passe ce dont ils ont besoin l'un de l'autre. */

@@ -1,6 +1,6 @@
 # Décisions produit
 
-État actuel des décisions, par thème (ce n'est pas un historique). Dernière mise à jour : 2026-11-11.
+État actuel des décisions, par thème (ce n'est pas un historique). Dernière mise à jour : 2026-11-23.
 
 ## Public et distribution
 
@@ -309,7 +309,8 @@ seule, en deux étapes :
 Choix du propriétaire, 23/11/2026 (PRD `docs/prd/ecran-montre.md`).
 
 - L'écran **« Ma montre »** s'ouvre en touchant la carte « Ma montre » d'Aujourd'hui, ou par « Mes stats montre »
-  dans Sport (visible seulement si la montre est connectée). Retour par la flèche ; la barre garde 4 onglets.
+  dans Sport (visible seulement si la montre est connectée). Retour par la flèche ; depuis la refonte du 23/11/2026,
+  l'écran se range sous l'onglet Santé.
 - Sélecteur **7 jours** (par défaut) / **30 jours**. Quatre blocs : Pas et Calories actives (barres, avec la mention
   « Indicatif : n'entre pas dans ton objectif »), Sommeil (barres par nuit, en heures et minutes), Cœur (deux
   courbes : moyenne du jour en trait plein, plus bas du jour en pointillés). Chaque bloc donne la **moyenne de la
@@ -355,13 +356,10 @@ Choix du propriétaire, 23/11/2026 (PRD `docs/prd/ecran-montre.md`).
   séance du jour, eau, semaine, poids. Écrans vides avec Pousse et un message propre au thème. Repas :
   une icône colorée par type de repas, barre du total face au maintien, import en lien discret.
   Sport : frise des jours de la semaine et flamme, bouton « + » pour ajouter une activité ou importer,
-  « Supprimer » d'une activité derrière un menu ⋮. Réglages en cartes (Profil, Apparence, Rappels et
-  motivation, Données et sauvegarde, Préparer mes demandes à ton IA), avec un aperçu de la palette de
-  chaque thème. Les boutons d'import disent « ton IA » : n'importe quelle IA peut produire le fichier.
+  « Supprimer » d'une activité derrière un menu ⋮. Réglages (voir « Refonte UI/UX »). Les boutons d'import disent « ton IA » : n'importe quelle IA peut produire le fichier.
 - Couleur pleine du thème pour l'onglet actif et les chips sélectionnées (contraste ≥ 3:1 face à la barre) ;
   les boutons secondaires (eau, +/- des répétitions, « + » de Sport) restent en teinte claire avec texte
   foncé, pour ne jamais peser autant que le bouton principal (fil Design, 12/11/2026).
-- 4 onglets : Aujourd'hui, Repas, Sport, Réglages (profil, import, export).
 - Import : « Ouvrir avec Healthy », partage, collage ou choix d'un fichier, toujours avec un aperçu
   et une confirmation avant d'enregistrer.
 - L'écran d'import s'ouvre aussi depuis Repas (« Importer un repas ») et Sport (« Importer un plan »),
@@ -397,10 +395,12 @@ Choix du propriétaire, 23/11/2026 (PRD `docs/prd/ecran-montre.md`).
   dans l'en-tête vert seulement ; Repas, fond #F3FAF5 semé d'aliments au trait ; Sport, fond pêche #FFF4EC
   avec diagonales corail. Jamais sous l'anneau, les macros ou le chrono (cartes unies, blanches en clair).
   En thème sombre : fond du thème, motif plus discret.
-- Thèmes au choix dans Réglages (choix du propriétaire, 11/11/2026, fil Design) : **Classique** (le vert
-  ludique ci-dessus, par défaut), **Pirate**, **Voyage**, **Espace**, **Arcade rétro** et **Montagne**. Appliqués tout de suite, sans redémarrer ;
+- Thèmes (choix du propriétaire, 11/11/2026, réduits à trois le 23/11/2026) : **Classique** (le vert
+  ludique ci-dessus, par défaut), **Pirate** et **Voyage**. Espace, Arcade rétro et Montagne sont retirés ; un
+  réglage enregistré sur l'un d'eux revient à Classique (valeur inconnue = Classique dans `AppearanceStore`).
+  Choisis dans Moi > Réglages > Apparence, appliqués tout de suite, sans redémarrer ;
   le choix est gardé dans les préférences du téléphone (pas dans Room, pas dans la sauvegarde).
-  Chaque thème change cinq choses, et seulement elles : palette, tenue de Pousse, motifs, récompenses,
+  Chaque thème change cinq choses, et seulement elles : palette, tenue de Pousse, décors photo, récompenses,
   titres et messages. **Les libellés des onglets et des boutons ne changent jamais.** Tous les textes
   atteignent un contraste de 4,5:1 (vérifié par un test).
   - Pirate : fond parchemin #F4E9D2, encre marine #1E2A3A (texte, en-tête, barres), accent rouge #C0392B,
@@ -414,21 +414,54 @@ Choix du propriétaire, 23/11/2026 (PRD `docs/prd/ecran-montre.md`).
     postales et d'autocollants ; badges en tampons de passeport ; la flamme compte des « étapes ».
     Textes : « Carnet de voyage du jour », « Étape franchie ! », « Belle escale, on repart ? »,
     « Mon passeport ».
-  - Espace, Arcade rétro et Montagne (choix du propriétaire, 12/11/2026, fil Design) :
-    - Espace : bleu nuit #141B3C, violet #6C4AB6, cyan #3FD0E0, jaune étoile #FFD447 ; clair = ciel lavande
-      #EEF0FA. Pousse astronaute (casque bulle, feuilles qui dépassent). Étoiles, orbites en pointillés,
-      petites planètes. Étoiles filantes ; badges en planètes ; la série compte des « missions ».
-      Textes : « Mission du jour », « Décollage réussi ! », « Mission du jour accomplie ».
-    - Arcade rétro : fond #111111, néons rose #FF4FA3, vert #39FF88, jaune #FFE14D ; clair = gris pâle
-      #F2F2F2, néons assombris. Pousse en pixel art (sa propre silhouette pixelisée, aucun personnage
-      existant). Grille de pixels et petits cœurs. Pièces 8-bit qui sautent ; trophées pixel ; série =
-      « niveau ». Textes : « Niveau terminé ! », « +1 vie », « Continuer ? ». Pas de police pixel : Nunito partout.
-    - Montagne : vert sapin #2F5D50, gris pierre #8A8F98, glacier #CFE8F3, orange balisage #F07B1D ;
-      sombre = nuit en refuge #18241F. Pousse en bonnet et piolet. Lignes de crêtes et sapins. Pluie de
-      fanions ; écussons de refuge, fanion au sommet pour les séries ; la série s'affiche en altitude
-      (400 m par semaine, « 1 200 m »). Textes : « Sommet atteint ! », « Belle étape, on souffle au refuge ».
-  - Ajouter un thème : une valeur de `AppTheme`, ses deux palettes et son `Ambiance` (Theme.kt), puis
-    une branche dans Pousse.kt, Patterns.kt, Confetti.kt, BadgesScreen.kt et ThemeTexts.kt.
+  - Ajouter un thème : une valeur de `AppTheme`, ses deux palettes et son `Ambiance` (Theme.kt), ses 4 décors
+    et son voile (`PhotoBackgrounds`, PhotoBackground.kt), puis une branche dans Pousse.kt, Patterns.kt,
+    Confetti.kt, BadgesScreen.kt et ThemeTexts.kt.
+
+## Refonte UI/UX (23/11/2026)
+
+Choix du propriétaire, découpée en 6 lots (cahier des charges dans les fichiers du projet, `design/refonte/`).
+Cette section est tenue à jour par chaque lot, dans son emplacement.
+
+### Lot 0 : navigation, thèmes, fond photo (livré)
+
+- **5 onglets** : Aujourd'hui, Repas, Sport, Santé, Moi. Chaque fonction a une seule maison ; ses écrans
+  secondaires s'ouvrent depuis son onglet et l'onglet reste allumé (`tabRouteOf`, ui/HealthyApp.kt). Il n'y a
+  plus d'onglet Réglages.
+- **Moi** a une icône à curseurs en haut à droite qui ouvre **Réglages**, en trois groupes : Personnaliser
+  (Apparence, Rappels et motivation, Mon profil sportif), Mes données (Sauvegarde et export, Importer depuis
+  mon IA, Ma montre connectée), Aide (Prompts à copier, Mises à jour). Chaque ligne ouvre son écran.
+  Mon profil, Mon poids et Mes badges sont sur Moi.
+- **Apparence** : les 3 thèmes avec l'aperçu de leur décor d'Aujourd'hui (voir « Thèmes »).
+- **Fond photo** : composant `PhotoBackground(onglet, thème)` (ui/PhotoBackground.kt). La photo couvre le haut
+  de l'écran derrière les cartes, défile avec le contenu et se fond dans la couleur de fond ; les titres posés
+  dessus sont blancs avec une ombre douce (`PhotoTitle`). 12 décors, 4 par thème (Aujourd'hui, Repas, Sport,
+  Santé ; Moi n'en a pas), en WebP 720 × 960 dans `res/drawable-nodpi` (environ 1 Mo en tout, un test vérifie
+  moins de 3 Mo). Cartes opaques à coins de 28 dp, police Nunito.
+- Les écrans Aujourd'hui, Repas et Sport gardent leur en-tête actuel jusqu'à leur lot, qui adopte le fond photo.
+  Santé et Moi sont des **coquilles** (raccourcis vers les écrans déjà là : Ma montre, Mon eau, Mon profil,
+  Mon poids, Mes badges) que le lot 4 remplit.
+- Aucune table, aucune migration.
+
+### Lot 1 : Aujourd'hui
+
+(à remplir par le lot 1)
+
+### Lot 2 : Repas
+
+(à remplir par le lot 2)
+
+### Lot 3 : Sport et trajets
+
+(à remplir par le lot 3)
+
+### Lot 4 : Santé et Moi
+
+(à remplir par le lot 4)
+
+### Lot 5 : mascotte Pousse
+
+(à remplir par le lot 5)
 
 ## Mises à jour de l'app
 

@@ -34,13 +34,10 @@ private val Straw = Color(0xFFE8C27A)
 private val StrawDark = Color(0xFFC99A4B)
 private val Leather = Color(0xFF8B5A2B)
 private val FlameCore = Color(0xFFFFC857)
-private val BonnetOrange = Color(0xFFF07B1D)
-private val BonnetDark = Color(0xFFC25E0E)
 
 /**
  * Pousse, la mascotte (maquette du fil Design), dessinée sur une grille de 120 × 120. Sa tenue suit
- * le thème : bandana et cache-œil en pirate, chapeau de paille et sac à dos en voyage, casque bulle
- * en espace, version pixelisée en arcade, bonnet et piolet en montagne.
+ * le thème : bandana et cache-œil en pirate, chapeau de paille et sac à dos en voyage.
  */
 @Composable
 fun Pousse(mood: Mood, modifier: Modifier = Modifier, size: Dp = 72.dp, growth: Growth = Growth.SPROUT) {
@@ -58,9 +55,6 @@ internal fun pousseLabel(theme: AppTheme, mood: Mood, growth: Growth): String {
         AppTheme.CLASSIC -> "Pousse"
         AppTheme.PIRATE -> "Capitaine Pousse"
         AppTheme.TRAVEL -> "Pousse en voyage"
-        AppTheme.SPACE -> "Pousse astronaute"
-        AppTheme.ARCADE -> "Pousse en pixels"
-        AppTheme.MOUNTAIN -> "Pousse en montagne"
     }
     return when (mood) {
         Mood.HAPPY -> "$who, contente"
@@ -77,15 +71,9 @@ internal fun DrawScope.drawPousse(
     shadow: Boolean = true,
     growth: Growth = Growth.SPROUT,
 ) {
-    if (theme == AppTheme.ARCADE) {
-        if (shadow) drawOval(Color.Black.copy(alpha = 0.15f), topLeft = Offset(32f, 107f), size = Size(56f, 10f))
-        pixelPousse(mood)
-        return
-    }
     if (shadow) drawOval(Color.Black.copy(alpha = 0.15f), topLeft = Offset(32f, 107f), size = Size(56f, 10f))
-    // En voyage, montagne et espace, les feuilles sortent du chapeau, du bonnet ou du casque :
-    // on les dessine après eux.
-    val leavesOnTop = theme == AppTheme.TRAVEL || theme == AppTheme.MOUNTAIN || theme == AppTheme.SPACE
+    // En voyage, les feuilles sortent du chapeau : on les dessine après lui.
+    val leavesOnTop = theme == AppTheme.TRAVEL
     if (!leavesOnTop) leaves(mood, growth)
     if (theme == AppTheme.TRAVEL) {
         // Sac à dos porté de trois quarts : il dépasse à droite du corps.
@@ -127,104 +115,8 @@ internal fun DrawScope.drawPousse(
             travelOutfit()
             leaves(mood, growth)
         }
-        AppTheme.SPACE -> {
-            spaceHelmet()
-            leaves(mood, growth)
-        }
-        AppTheme.MOUNTAIN -> {
-            mountainOutfit()
-            leaves(mood, growth)
-        }
-        AppTheme.ARCADE -> Unit
     }
 }
-
-/** Casque bulle transparent, col gris en bas ; les feuilles dépassent par le haut. */
-private fun DrawScope.spaceHelmet() {
-    val center = Offset(60f, 72f)
-    drawCircle(Color.White.copy(alpha = 0.16f), radius = 46f, center = center)
-    drawCircle(Color(0xFFBFE9F0), radius = 46f, center = center, style = Stroke(width = 3f))
-    // Reflet sur le haut gauche de la bulle.
-    drawPath(
-        Path().apply { moveTo(26f, 62f); quadraticTo(30f, 38f, 52f, 30f) },
-        Color.White.copy(alpha = 0.8f),
-        style = Stroke(width = 4f, cap = StrokeCap.Round),
-    )
-    drawRoundRect(Color(0xFFB8BCC8), topLeft = Offset(30f, 104f), size = Size(60f, 10f), cornerRadius = CornerRadius(5f))
-    drawRoundRect(Color(0xFF6C4AB6), topLeft = Offset(54f, 105f), size = Size(12f, 8f), cornerRadius = CornerRadius(2f))
-}
-
-/** Bonnet orange balisage à côtes, et piolet tenu sur la droite. */
-private fun DrawScope.mountainOutfit() {
-    // Piolet : manche en bois, tête métallique.
-    drawLine(Color(0xFF8B5A2B), Offset(100f, 110f), Offset(110f, 56f), strokeWidth = 4f, cap = StrokeCap.Round)
-    drawLine(Color(0xFF8A8F98), Offset(98f, 58f), Offset(120f, 54f), strokeWidth = 5f, cap = StrokeCap.Round)
-    drawPath(Path().apply { moveTo(98f, 58f); quadraticTo(94f, 62f, 96f, 68f) }, Color(0xFF8A8F98), style = Stroke(width = 4f, cap = StrokeCap.Round))
-    val head = Path().apply { addOval(Rect(Offset(60f, 74f), 34f)) }
-    clipPath(head) {
-        drawRect(BonnetOrange, topLeft = Offset(20f, 36f), size = Size(80f, 22f))
-        listOf(38f, 48f, 60f, 72f, 82f).forEach { x ->
-            drawLine(BonnetDark, Offset(x, 40f), Offset(x, 56f), strokeWidth = 2f)
-        }
-    }
-    drawRoundRect(BonnetDark, topLeft = Offset(26f, 54f), size = Size(68f, 8f), cornerRadius = CornerRadius(4f))
-}
-
-/**
- * Pousse en pixel art pour le thème Arcade rétro : la même silhouette (corps rond, deux feuilles,
- * joues), redessinée sur une grille de 16 × 16 cases. Ce n'est la reprise d'aucun personnage existant.
- */
-private fun DrawScope.pixelPousse(mood: Mood) {
-    val rows = PixelPousse.toMutableList()
-    when (mood) {
-        Mood.HAPPY -> Unit
-        // Clin d'œil : l'œil droit devient un trait.
-        Mood.ENCOURAGING -> {
-            rows[8] = rows[8].replaceRange(10, 11, "G")
-            rows[9] = rows[9].replaceRange(9, 12, "KKK")
-        }
-        // Fière : yeux plissés en ^ ^ et grande bouche ouverte en U sur deux rangées.
-        Mood.PROUD -> {
-            rows[9] = ".WGGKGKGGKGKGGW."
-            rows[11] = ".WGCGKKKKKKGCGW."
-            rows[12] = ".WGGGGKKKKGGGGW."
-        }
-    }
-    val cell = 120f / 16f
-    rows.forEachIndexed { y, row ->
-        row.forEachIndexed { x, c ->
-            val color = when (c) {
-                'G' -> Body
-                'D' -> LeafDark
-                'L' -> Body
-                'K' -> Ink
-                'W' -> Color.White
-                'C' -> Cheek
-                else -> null
-            }
-            if (color != null) drawRect(color, topLeft = Offset(x * cell, y * cell + 2f), size = Size(cell + 0.5f, cell + 0.5f))
-        }
-    }
-}
-
-private val PixelPousse = listOf(
-    "................",
-    ".DDD.......LLL..",
-    "..DDDD...LLLL...",
-    "...DDDD.LLLL....",
-    ".....DDLL.......",
-    ".....WWWWWW.....",
-    "...WWGGGGGGWW...",
-    "..WGGGGGGGGGGW..",
-    "..WGGKGGGGKGGW..",
-    ".WGGGKGGGGKGGGW.",
-    ".WGCGGGGGGGGCGW.",
-    ".WGCGGKGGKGGCGW.",
-    ".WGGGGGKKGGGGGW.",
-    "..WGGGGGGGGGGW..",
-    "...WWGGGGGGWW...",
-    ".....WWWWWW.....",
-)
 
 /** Feuilles : plus grandes quand elle est fière ; tige, feuilles en plus et fleur selon le palier. */
 private fun DrawScope.leaves(mood: Mood, growth: Growth) {

@@ -3,8 +3,9 @@ package com.bidaboss.healthy.ui
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.MonitorHeart
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Restaurant
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -30,6 +31,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.bidaboss.healthy.body.ui.MeScreen
 import com.bidaboss.healthy.body.ui.ProfileScreen
 import com.bidaboss.healthy.body.ui.WeightScreen
 import com.bidaboss.healthy.importexport.ui.ImportScreen
@@ -39,7 +41,10 @@ import com.bidaboss.healthy.meals.ui.MealsScreen
 import com.bidaboss.healthy.meals.ui.RecipeEditorScreen
 import com.bidaboss.healthy.meals.ui.RecipesScreen
 import com.bidaboss.healthy.meals.ui.ScannedProductsScreen
+import com.bidaboss.healthy.settings.ui.SettingsDetailScreen
 import com.bidaboss.healthy.settings.ui.SettingsScreen
+import com.bidaboss.healthy.settings.ui.SettingsSection
+import com.bidaboss.healthy.health.ui.HealthScreen
 import com.bidaboss.healthy.health.ui.WatchTrendsScreen
 import com.bidaboss.healthy.today.ui.BadgesScreen
 import com.bidaboss.healthy.today.ui.TodayScreen
@@ -52,19 +57,41 @@ import com.bidaboss.healthy.workout.ui.SportProfileScreen
 import com.bidaboss.healthy.workout.ui.WorkoutScreen
 import java.time.LocalDate
 
+/*
+ * Les 5 onglets de la refonte (23/11/2026) : Aujourd'hui, Repas, Sport, Santé, Moi. Chaque fonction a une seule
+ * maison ; ses écrans secondaires s'ouvrent depuis son onglet. Réglages n'est plus un onglet : il s'ouvre par
+ * l'icône à curseurs de Moi.
+ *
+ * Fichier partagé entre les lots de la refonte : chaque lot n'écrit que dans son emplacement (repéré par
+ * « LOT n »), à trois endroits : ses routes (Routes), son rattachement à un onglet (tabRouteOf) et ses écrans
+ * (NavHost). Voir docs/decisions.md.
+ */
 private object Routes {
+    // ── Onglets ──
     const val TODAY = "today"
     const val MEALS = "meals"
     const val WORKOUT = "workout"
+    const val HEALTH = "health"
+    const val ME = "me"
+
+    // ── LOT 0 : Moi, Réglages et import ──
     const val SETTINGS = "settings"
+    const val SETTINGS_SECTION = "settings_section"
+    const val ARG_SECTION = "section"
+
+    fun settingsSection(section: SettingsSection) = "$SETTINGS_SECTION/${section.route}"
+
     const val IMPORT = "import"
     const val PROFILE = "profile"
     const val WEIGHT = "weight"
-    const val WATER = "water"
     const val BADGES = "badges"
-    const val WEEKLY_RECAP = "weekly_recap"
-    const val WATCH = "watch"
     const val SPORT_PROFILE = "sport_profile"
+
+    // ── LOT 1 : Aujourd'hui ──
+    const val WATER = "water"
+    const val WEEKLY_RECAP = "weekly_recap"
+
+    // ── LOT 2 : Repas ──
     const val MEAL_EDITOR = "meal_editor"
     const val ARG_MEAL_ID = "mealId"
     const val ARG_DATE = "date"
@@ -82,11 +109,15 @@ private object Routes {
     /** [recipeId] nul = nouveau plat. */
     fun recipeEditor(recipeId: Long?) = "$RECIPE_EDITOR/${recipeId ?: NO_MEAL}"
 
+    // ── LOT 3 : Sport et trajets ──
     const val SESSION_RUN = "session_run"
     const val ARG_SESSION_ID = "sessionId"
     const val ARG_DURATION = "durationMin"
 
     fun sessionRun(sessionId: Long, durationMin: Int) = "$SESSION_RUN/$sessionId/$durationMin"
+
+    // ── LOT 4 : Santé et Moi ──
+    const val WATCH = "watch"
 }
 
 private data class Tab(val route: String, val label: String, val icon: ImageVector)
@@ -95,8 +126,28 @@ private val tabs = listOf(
     Tab(Routes.TODAY, "Aujourd'hui", Icons.Rounded.Home),
     Tab(Routes.MEALS, "Repas", Icons.Rounded.Restaurant),
     Tab(Routes.WORKOUT, "Sport", Icons.Rounded.FitnessCenter),
-    Tab(Routes.SETTINGS, "Réglages", Icons.Rounded.Settings),
+    Tab(Routes.HEALTH, "Santé", Icons.Rounded.MonitorHeart),
+    Tab(Routes.ME, "Moi", Icons.Rounded.Person),
 )
+
+/** L'onglet (sa route) auquel appartient un écran : il reste allumé dans la barre pendant qu'on y est. */
+private fun tabRouteOf(route: String?): String? = when {
+    route == null -> null
+    // LOT 1 : Aujourd'hui
+    route == Routes.TODAY || route == Routes.WATER || route == Routes.WEEKLY_RECAP -> Routes.TODAY
+    // LOT 2 : Repas
+    route == Routes.MEALS || route == Routes.SCANNED_PRODUCTS || route == Routes.RECIPES ||
+        route.startsWith(Routes.MEAL_EDITOR) || route.startsWith(Routes.RECIPE_EDITOR) -> Routes.MEALS
+    // LOT 3 : Sport et trajets
+    route == Routes.WORKOUT || route.startsWith(Routes.SESSION_RUN) -> Routes.WORKOUT
+    // LOT 4 : Santé et Moi
+    route == Routes.HEALTH || route == Routes.WATCH -> Routes.HEALTH
+    // LOT 0 : Moi, Réglages et import
+    route == Routes.ME || route == Routes.SETTINGS || route.startsWith(Routes.SETTINGS_SECTION) ||
+        route == Routes.IMPORT || route == Routes.PROFILE || route == Routes.WEIGHT || route == Routes.BADGES ||
+        route == Routes.SPORT_PROFILE -> Routes.ME
+    else -> null
+}
 
 /**
  * @param importRequests augmente à chaque fichier ou texte reçu d'une autre app :
@@ -147,16 +198,10 @@ private fun MainNavigation(
     Scaffold(
         bottomBar = {
             if (!inSession && currentRoute != Routes.WEEKLY_RECAP) NavigationBar {
+                val currentTab = tabRouteOf(currentRoute)
                 tabs.forEach { tab ->
-                    val selected = currentRoute == tab.route ||
-                        (tab.route == Routes.SETTINGS && (currentRoute == Routes.IMPORT || currentRoute == Routes.PROFILE ||
-                            currentRoute == Routes.WEIGHT || currentRoute == Routes.SPORT_PROFILE)) ||
-                        (tab.route == Routes.TODAY && (currentRoute == Routes.WATER || currentRoute == Routes.BADGES ||
-                            currentRoute == Routes.WEEKLY_RECAP || currentRoute == Routes.WATCH)) ||
-                        (tab.route == Routes.MEALS && (currentRoute?.startsWith(Routes.MEAL_EDITOR) == true || currentRoute == Routes.SCANNED_PRODUCTS)) ||
-                        (tab.route == Routes.WORKOUT && inSession)
                     NavigationBarItem(
-                        selected = selected,
+                        selected = currentTab == tab.route,
                         onClick = { navController.navigateToTab(tab.route) },
                         icon = { Icon(tab.icon, contentDescription = null) },
                         label = { Text(tab.label) },
@@ -183,7 +228,15 @@ private fun MainNavigation(
                     onOpenWatch = { navController.navigate(Routes.WATCH) { launchSingleTop = true } },
                 )
             }
+            // ── LOT 4 : Santé et Moi ──
+            composable(Routes.HEALTH) {
+                HealthScreen(
+                    onOpenWatch = { navController.navigate(Routes.WATCH) { launchSingleTop = true } },
+                    onOpenWater = { navController.navigate(Routes.WATER) { launchSingleTop = true } },
+                )
+            }
             composable(Routes.WATCH) { WatchTrendsScreen(onClose = { navController.popBackStack() }) }
+            // ── LOT 1 : Aujourd'hui ──
             composable(Routes.WATER) { WaterScreen(onClose = { navController.popBackStack() }) }
             composable(Routes.BADGES) { BadgesScreen(onClose = { navController.popBackStack() }) }
             composable(Routes.WEEKLY_RECAP) { WeeklyRecapScreen(onClose = { navController.popBackStack() }) }
@@ -251,14 +304,39 @@ private fun MainNavigation(
                     onClose = { navController.popBackStack() },
                 )
             }
-            composable(Routes.SETTINGS) {
-                SettingsScreen(
-                    onOpenImport = { navController.navigate(Routes.IMPORT) { launchSingleTop = true } },
+            // ── LOT 0 : Moi, Réglages et import ──
+            composable(Routes.ME) {
+                MeScreen(
+                    onOpenSettings = { navController.navigate(Routes.SETTINGS) { launchSingleTop = true } },
                     onOpenProfile = { navController.navigate(Routes.PROFILE) { launchSingleTop = true } },
                     onOpenWeight = { navController.navigate(Routes.WEIGHT) { launchSingleTop = true } },
-                    onOpenSportProfile = { navController.navigate(Routes.SPORT_PROFILE) { launchSingleTop = true } },
-                    onCheckUpdates = updateViewModel::checkNow,
+                    onOpenBadges = { navController.navigate(Routes.BADGES) { launchSingleTop = true } },
                 )
+            }
+            composable(Routes.SETTINGS) {
+                SettingsScreen(
+                    onOpenSection = { navController.navigate(Routes.settingsSection(it)) { launchSingleTop = true } },
+                    onOpenImport = { navController.navigate(Routes.IMPORT) { launchSingleTop = true } },
+                    onOpenSportProfile = { navController.navigate(Routes.SPORT_PROFILE) { launchSingleTop = true } },
+                    onClose = { navController.popBackStack() },
+                )
+            }
+            composable(
+                route = "${Routes.SETTINGS_SECTION}/{${Routes.ARG_SECTION}}",
+                arguments = listOf(navArgument(Routes.ARG_SECTION) { type = NavType.StringType }),
+            ) { entry ->
+                val section = SettingsSection.ofRoute(entry.arguments?.getString(Routes.ARG_SECTION))
+                if (section == null) {
+                    // Section inconnue (ne devrait pas arriver) : retour à Réglages.
+                    LaunchedEffect(Unit) { navController.popBackStack() }
+                } else {
+                    SettingsDetailScreen(
+                        section = section,
+                        onClose = { navController.popBackStack() },
+                        onOpenSportProfile = { navController.navigate(Routes.SPORT_PROFILE) { launchSingleTop = true } },
+                        onCheckUpdates = updateViewModel::checkNow,
+                    )
+                }
             }
             composable(Routes.PROFILE) { ProfileScreen(onClose = { navController.popBackStack() }) }
             composable(Routes.WEIGHT) { WeightScreen(onClose = { navController.popBackStack() }) }

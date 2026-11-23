@@ -5,8 +5,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/** Thèmes au choix dans Réglages (fil Design, 11/11/2026). Le nom est gardé tel quel dans les préférences. */
-enum class AppTheme { CLASSIC, PIRATE, TRAVEL, SPACE, ARCADE, MOUNTAIN }
+/**
+ * Les 3 thèmes de l'app (refonte du 23/11/2026) : Classique par défaut, Pirate, Voyage. Espace, Arcade rétro et
+ * Montagne ont été retirés ; le nom est gardé tel quel dans les préférences.
+ */
+enum class AppTheme { CLASSIC, PIRATE, TRAVEL }
 
 /**
  * Thème de l'app, Classique par défaut. Gardé dans les préférences du téléphone (pas dans Room :
@@ -22,7 +25,7 @@ class AppearanceStore(context: Context) {
         _theme.value = theme
     }
 
-    // Une valeur inconnue (thème retiré dans une version future) revient au thème Classique.
+    // Un réglage inconnu (Espace, Arcade rétro et Montagne ont été retirés) revient au thème Classique.
     private fun read(): AppTheme =
         AppTheme.entries.firstOrNull { it.name == prefs.getString(KEY_THEME, null) } ?: AppTheme.CLASSIC
 

@@ -135,8 +135,7 @@ private val Badge.isStreak: Boolean
 
 /**
  * Dessin du badge selon le thème : médaille corail (Classique), coffre ou pièce d'or (Pirate),
- * tampon de passeport (Voyage), planète (Espace), trophée pixel (Arcade rétro), fanion au sommet pour les
- * séries et écusson de refuge pour les autres (Montagne). Gris tant qu'il n'est pas débloqué.
+ * tampon de passeport (Voyage). Gris tant qu'il n'est pas débloqué.
  */
 @Composable
 private fun BadgeIcon(badge: Badge, unlocked: Boolean) {
@@ -145,10 +144,6 @@ private fun BadgeIcon(badge: Badge, unlocked: Boolean) {
     Canvas(Modifier.size(52.dp)) {
         when {
             ambiance.theme == AppTheme.TRAVEL -> stamp(unlocked, locked, ambiance, tilt = (badge.ordinal % 3 - 1) * 8f)
-            ambiance.theme == AppTheme.SPACE -> planet(unlocked, locked, badge.ordinal)
-            ambiance.theme == AppTheme.ARCADE -> pixelTrophy(unlocked, locked)
-            ambiance.theme == AppTheme.MOUNTAIN && badge.isStreak -> summitFlag(unlocked, locked, ambiance)
-            ambiance.theme == AppTheme.MOUNTAIN -> crest(unlocked, locked, ambiance)
             ambiance.theme == AppTheme.PIRATE && !badge.isStreak -> chest(unlocked, locked, ambiance)
             else -> medal(unlocked, locked, ambiance)
         }
@@ -225,63 +220,3 @@ private fun DrawScope.stamp(unlocked: Boolean, locked: Color, ambiance: Ambiance
 }
 
 private val PlanetColors = listOf(Color(0xFF6C4AB6), Color(0xFF3FD0E0), Color(0xFFFFD447), Color(0xFFFF8A65), Color(0xFF7BD99A))
-
-/** Planète à anneau, une couleur par badge. */
-private fun DrawScope.planet(unlocked: Boolean, locked: Color, index: Int) {
-    val r = size.minDimension / 2
-    val c = Offset(r, r)
-    val body = if (unlocked) PlanetColors[index % PlanetColors.size] else locked.copy(alpha = 0.25f)
-    val ring = if (unlocked) Color(0xFFFFD447) else locked
-    drawCircle(body, radius = r * 0.56f, center = c)
-    if (!unlocked) drawCircle(locked, radius = r * 0.56f, center = c, style = Stroke(width = 2f))
-    rotate(-18f, pivot = c) {
-        drawOval(ring, topLeft = Offset(c.x - r * 0.98f, c.y - r * 0.24f), size = Size(r * 1.96f, r * 0.48f), style = Stroke(width = r * 0.08f))
-    }
-    if (unlocked) drawCircle(Color.White.copy(alpha = 0.4f), radius = r * 0.14f, center = c - Offset(r * 0.2f, r * 0.22f))
-}
-
-/** Trophée pixel : coupe faite de cases. */
-private fun DrawScope.pixelTrophy(unlocked: Boolean, locked: Color) {
-    val rows = listOf("XXXXXXXXXX", "XYYYYYYYYX", ".XYYYYYYX.", ".XYYYYYYX.", "..XYYYYX..", "...XYYX...", "....XX....", "....XX....", "..XXXXXX..", "..XXXXXX..")
-    val k = size.minDimension / 10f
-    val gold = if (unlocked) Color(0xFFFFE14D) else locked.copy(alpha = 0.25f)
-    val edge = if (unlocked) Color(0xFFB88A00) else locked
-    rows.forEachIndexed { y, row ->
-        row.forEachIndexed { x, ch ->
-            val color = when (ch) {
-                'X' -> edge
-                'Y' -> gold
-                else -> null
-            }
-            if (color != null) drawRect(color, Offset(x * k, y * k), Size(k + 0.5f, k + 0.5f))
-        }
-    }
-}
-
-/** Série en Montagne : sommet enneigé et fanion planté. */
-private fun DrawScope.summitFlag(unlocked: Boolean, locked: Color, ambiance: Ambiance) {
-    val w = size.width
-    val h = size.height
-    val rock = if (unlocked) Color(0xFF8A8F98) else locked.copy(alpha = 0.25f)
-    drawPath(Path().apply { moveTo(w * 0.04f, h * 0.94f); lineTo(w * 0.5f, h * 0.3f); lineTo(w * 0.96f, h * 0.94f); close() }, rock)
-    drawPath(Path().apply { moveTo(w * 0.36f, h * 0.5f); lineTo(w * 0.5f, h * 0.3f); lineTo(w * 0.64f, h * 0.5f); lineTo(w * 0.5f, h * 0.44f); close() }, if (unlocked) Color.White else locked)
-    drawLine(if (unlocked) Color(0xFF5E636B) else locked, Offset(w * 0.5f, h * 0.32f), Offset(w * 0.5f, h * 0.04f), strokeWidth = w * 0.04f)
-    drawPath(Path().apply { moveTo(w * 0.5f, h * 0.04f); lineTo(w * 0.82f, h * 0.12f); lineTo(w * 0.5f, h * 0.2f); close() }, if (unlocked) ambiance.accent else locked)
-}
-
-/** Écusson de refuge : blason vert sapin bordé d'orange, sapin blanc au centre. */
-private fun DrawScope.crest(unlocked: Boolean, locked: Color, ambiance: Ambiance) {
-    val w = size.width
-    val h = size.height
-    val shield = Path().apply {
-        moveTo(w * 0.14f, h * 0.08f); lineTo(w * 0.86f, h * 0.08f); lineTo(w * 0.86f, h * 0.5f)
-        quadraticTo(w * 0.86f, h * 0.82f, w * 0.5f, h * 0.96f)
-        quadraticTo(w * 0.14f, h * 0.82f, w * 0.14f, h * 0.5f); close()
-    }
-    drawPath(shield, if (unlocked) ambiance.header else locked.copy(alpha = 0.25f))
-    drawPath(shield, if (unlocked) ambiance.accent else locked, style = Stroke(width = w * 0.06f))
-    drawPath(
-        Path().apply { moveTo(w * 0.5f, h * 0.22f); lineTo(w * 0.7f, h * 0.66f); lineTo(w * 0.3f, h * 0.66f); close() },
-        if (unlocked) Color.White else locked,
-    )
-}

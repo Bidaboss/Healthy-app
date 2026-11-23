@@ -554,6 +554,10 @@ Cette section est tenue à jour par chaque lot, dans son emplacement.
   toutes les 30 min ; 13/11/2026, le propriétaire ne voyait pas la vérification au démarrage) et propose
   « Mettre à jour » ; « Plus tard » ne la repropose pas avant 24 h ; Android demande toujours de confirmer l'installation (choix du propriétaire, 13/11/2026 :
   dossier Drive à dépôt manuel, plutôt qu'une publication automatique).
+- Le propriétaire n'a plus à aller chercher la mise à jour dans Réglages (23/11/2026) : une vérification tourne chaque jour vers 10 h,
+  même app fermée, et envoie une notification « Nouvelle version disponible » (une par version). Une fois la version connue,
+  un bandeau en haut de l'app la rappelle jusqu'à l'installation (même après « Plus tard »). L'APK est déposé dans le dossier
+  automatiquement par GitHub Actions à chaque fusion sur main.
 - Réglages, carte « Mises à jour » : version installée et bouton « Vérifier les mises à jour ».
   Le lien du dossier est fourni avec l'app : il n'est jamais affiché (même dans un message d'erreur)
   ni modifiable dans l'app ; le changer passe par le code (demandes du propriétaire, 13/11/2026). Ses proches

@@ -19,6 +19,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -55,6 +56,7 @@ import com.bidaboss.healthy.today.ui.BadgesScreen
 import com.bidaboss.healthy.today.ui.TodayScreen
 import com.bidaboss.healthy.today.ui.WaterScreen
 import com.bidaboss.healthy.today.ui.WeeklyRecapScreen
+import com.bidaboss.healthy.update.ui.UpdateBanner
 import com.bidaboss.healthy.update.ui.UpdateDialog
 import com.bidaboss.healthy.update.ui.UpdateViewModel
 import com.bidaboss.healthy.workout.ui.AddActivityScreen
@@ -234,10 +236,13 @@ private fun MainNavigation(
             }
         },
     ) { innerPadding ->
+        Column(Modifier.padding(innerPadding)) {
+        val bannerVersion by updateViewModel.banner.collectAsStateWithLifecycle()
+        if (!inSession) bannerVersion?.let { UpdateBanner(it, onClick = updateViewModel::checkNow) }
         NavHost(
             navController = navController,
             startDestination = Routes.TODAY,
-            modifier = Modifier.padding(innerPadding),
+            modifier = Modifier.weight(1f),
         ) {
             composable(Routes.TODAY) {
                 TodayScreen(
@@ -425,6 +430,7 @@ private fun MainNavigation(
                     onDone = { if (!navController.popBackStack()) navController.navigateToTab(Routes.TODAY) },
                 )
             }
+        }
         }
     }
 }

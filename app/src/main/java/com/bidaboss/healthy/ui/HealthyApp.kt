@@ -1,5 +1,9 @@
 package com.bidaboss.healthy.ui
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Home
@@ -147,7 +151,7 @@ private object Routes {
 private data class Tab(val route: String, val label: String, val icon: ImageVector)
 
 private val tabs = listOf(
-    Tab(Routes.TODAY, "Aujourd'hui", Icons.Rounded.Home),
+    Tab(Routes.TODAY, "Accueil", Icons.Rounded.Home),
     Tab(Routes.MEALS, "Repas", Icons.Rounded.Restaurant),
     Tab(Routes.WORKOUT, "Sport", Icons.Rounded.FitnessCenter),
     Tab(Routes.HEALTH, "Santé", Icons.Rounded.MonitorHeart),
@@ -243,6 +247,11 @@ private fun MainNavigation(
             navController = navController,
             startDestination = Routes.TODAY,
             modifier = Modifier.weight(1f),
+            // Transitions douces entre onglets et écrans : fondu et petit glissement (retouches du 23/11/2026).
+            enterTransition = { fadeIn(tween(220)) + slideInVertically(tween(220)) { it / 40 } },
+            exitTransition = { fadeOut(tween(120)) },
+            popEnterTransition = { fadeIn(tween(220)) + slideInVertically(tween(220)) { it / 40 } },
+            popExitTransition = { fadeOut(tween(120)) },
         ) {
             composable(Routes.TODAY) {
                 TodayScreen(
@@ -284,11 +293,12 @@ private fun MainNavigation(
                     onOpenSavedFoods = { navController.navigate(Routes.SAVED_FOODS) { launchSingleTop = true } },
                     onCreateFood = { navController.navigate(Routes.savedFoodEditor(null)) },
                     onImportFromAi = { pasteFromClipboard(context, importViewModel) },
-                    importCard = {
+                    importCard = { idleExtra ->
                         ImportMealCard(
                             viewModel = importViewModel,
                             onPickFile = onPickFile,
                             onOpenImport = { navController.navigate(Routes.IMPORT) { launchSingleTop = true } },
+                            idleExtra = idleExtra,
                         )
                     },
                 )

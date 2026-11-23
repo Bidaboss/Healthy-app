@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,7 +35,9 @@ import androidx.compose.material.icons.rounded.LocalBar
 import androidx.compose.material.icons.rounded.LunchDining
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.StarBorder
-import androidx.compose.material3.AssistChip
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -61,6 +64,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -72,6 +76,7 @@ import com.bidaboss.healthy.meals.data.Drink
 import com.bidaboss.healthy.meals.data.Food
 import com.bidaboss.healthy.meals.data.Meal
 import com.bidaboss.healthy.ui.EmptyState
+import com.bidaboss.healthy.ui.PhotoOutlinedButton
 import com.bidaboss.healthy.ui.ThemeTexts
 import com.bidaboss.healthy.ui.sharedCacheDir
 import com.bidaboss.healthy.ui.shareFile
@@ -105,7 +110,7 @@ fun MealsScreen(
     /** Colle le presse-papiers dans l'import : l'aperçu apparaît dans la carte en tête de liste. */
     onImportFromAi: () -> Unit,
     /** La carte « Importer un repas de mon IA » (fournie par l'écran qui sait importer : Repas ne dépend pas d'importexport). */
-    importCard: @Composable () -> Unit,
+    importCard: @Composable (idleExtra: @Composable RowScope.() -> Unit) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MealsViewModel = viewModel(
         factory = healthyViewModelFactory {
@@ -235,7 +240,12 @@ fun MealsScreen(
                 }
             }
             item(key = "import") {
-                Box(Modifier.padding(horizontal = 16.dp)) { importCard() }
+                Box(Modifier.padding(horizontal = 16.dp)) {
+                    importCard {
+                        DrinkMenuButton(enabled = state.isToday, onAdd = viewModel::addDrink, modifier = Modifier.weight(1f))
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
             }
             // « Ton petit-déjeuner habituel ? » (carte qui était sur Aujourd'hui avant la refonte) : seulement le jour même.
             if (state.isToday && habit.suggestion != null) {
@@ -256,9 +266,6 @@ fun MealsScreen(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp),
                     )
                 }
-            }
-            if (state.isToday) {
-                item(key = "drinks") { Box(Modifier.padding(horizontal = 16.dp)) { DrinkButtons(onAdd = viewModel::addDrink) } }
             }
             if (state.groups.isEmpty()) {
                 item {
@@ -286,14 +293,18 @@ fun MealsScreen(
             }
             item(key = "report") {
                 Column(Modifier.padding(horizontal = 16.dp)) {
-                    OutlinedButton(onClick = viewModel::exportReport, modifier = Modifier.fillMaxWidth()) {
+                    PhotoOutlinedButton(onClick = viewModel::exportReport, modifier = Modifier.fillMaxWidth()) {
                         Text("Envoyer mon bilan repas à Claude")
                     }
                     Text(
                         "Les 7 derniers jours (repas, eau, protéines, fibres), pour que Claude t'aide à ajuster.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp),
+                        // Sur une pastille de la couleur des cartes : lisible sur la photo comme sur le fond uni.
+                        modifier = Modifier
+                            .padding(top = 8.dp)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest, RoundedCornerShape(12.dp))
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
                     )
                 }
             }
@@ -507,33 +518,43 @@ internal fun SavedFoodBookmark(saved: Boolean, onClick: () -> Unit) {
 
 internal fun savedFoodKeyOf(name: String): String = savedKeyOf(name)
 
-/** Boissons caloriques en un geste (soda et jus comptent dans l'eau, bière et vin non). */
-@OptIn(ExperimentalLayoutApi::class)
+/**
+ * « Ajouter une boisson » : un bouton qui ouvre la liste (bière, vin, soda, jus). Ajoutée au repas en cours, sinon en
+ * collation ; le soda et le jus comptent dans l'eau, pas la bière ni le vin.
+ */
 @Composable
-private fun DrinkButtons(onAdd: (Drink) -> Unit) {
+private fun DrinkMenuButton(enabled: Boolean, onAdd: (Drink) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    // Dans une carte : posé directement sur la photo, le texte devenait illisible (retouches du 23/11/2026).
-    Card(modifier = Modifier.fillMaxWidth()) {
-    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text("Une boisson ?", style = MaterialTheme.typography.titleSmall)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    var open by remember { mutableStateOf(false) }
+    Box(modifier) {
+        OutlinedButton(
+            onClick = { open = true },
+            enabled = enabled,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest),
+        ) {
+            Icon(Icons.Rounded.LocalBar, contentDescription = null, modifier = Modifier.size(18.dp))
+            Text(" Boisson", maxLines = 1, softWrap = false)
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             Drink.entries.forEach { drink ->
-                AssistChip(
+                DropdownMenuItem(
+                    text = { Text("${drink.label} ${drink.volumeLabel}") },
+                    leadingIcon = { Icon(Icons.Rounded.LocalBar, contentDescription = null, modifier = Modifier.size(18.dp)) },
                     onClick = {
+                        open = false
                         WaterFeedback.tick(context)
                         onAdd(drink)
                     },
-                    label = { Text("${drink.label} ${drink.volumeLabel}") },
-                    leadingIcon = { Icon(Icons.Rounded.LocalBar, contentDescription = null, modifier = Modifier.size(18.dp)) },
                 )
             }
+            Text(
+                "Le soda et le jus comptent dans l'eau, pas la bière ni le vin.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).width(220.dp),
+            )
         }
-        Text(
-            "Ajoutée au repas en cours, sinon en collation. Le soda et le jus comptent dans l'eau, pas la bière ni le vin.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
     }
 }
 

@@ -124,14 +124,15 @@ private val photoShadow = Shadow(color = Color.Black.copy(alpha = 0.55f), offset
 fun TodayHeader(state: HeaderUiState, onOpenBadges: () -> Unit, modifier: Modifier = Modifier) {
     val texts = ThemeTexts.current
     val white = Color.White
+    // Même marge de 16 dp que les cartes dessous : un seul bloc, Pousse à gauche, textes empilés, série à droite.
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 24.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Pousse(state.mood, size = 104.dp, growth = state.growth)
+        Pousse(state.mood, size = 128.dp, growth = state.growth)
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             texts.dayTitle?.let {
                 Text(it, color = white, style = MaterialTheme.typography.labelLarge.copy(shadow = photoShadow), fontWeight = FontWeight.Bold)
@@ -150,7 +151,7 @@ fun TodayHeader(state: HeaderUiState, onOpenBadges: () -> Unit, modifier: Modifi
             Text(
                 texts.headerMessage(state.mood, state.mealCount),
                 color = white,
-                style = MaterialTheme.typography.bodyLarge.copy(shadow = photoShadow),
+                style = MaterialTheme.typography.bodyMedium.copy(shadow = photoShadow),
                 fontWeight = FontWeight.SemiBold,
             )
             if (state.streakHint.isNotEmpty()) {

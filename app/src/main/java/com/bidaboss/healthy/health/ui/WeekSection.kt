@@ -24,6 +24,14 @@ import kotlin.math.roundToInt
 internal fun WeekSection(state: HealthUiState, onOpenWater: () -> Unit, onConnect: () -> Unit) {
     val dates = state.week.map { it.date }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        // La consigne des barres, une seule fois pour toutes les cartes.
+        Text(
+            "Touche une barre pour voir le jour. Pointillé : ton objectif.",
+            style = MaterialTheme.typography.bodySmall.copy(
+                shadow = androidx.compose.ui.graphics.Shadow(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.55f), androidx.compose.ui.geometry.Offset(0f, 2f), 12f),
+            ),
+            color = androidx.compose.ui.graphics.Color.White,
+        )
         // Calories
         val kcal = state.week.map { it.kcal?.toDouble() }
         MetricCard("Calories") {
@@ -34,7 +42,11 @@ internal fun WeekSection(state: HealthUiState, onOpenWater: () -> Unit, onConnec
                 BigNumber("${formatThousands(avg.roundToInt())} kcal par jour")
                 Muted("En moyenne sur ${kcal.count { it != null }} ${if (kcal.count { it != null } > 1) "jours notés" else "jour noté"}.")
             }
-            WeekBars(dates, kcal, weekDescription("Calories par jour", dates, kcal) { "${formatThousands(it.roundToInt())} kcal" })
+            val kcalText: (Double) -> String = { "${formatThousands(it.roundToInt())} kcal" }
+            WeekBars(
+                dates, kcal, weekDescription("Calories par jour", dates, kcal, kcalText),
+                goal = state.week.lastOrNull()?.kcalGoal?.toDouble(), format = kcalText,
+            )
         }
 
         // Eau
@@ -43,9 +55,13 @@ internal fun WeekSection(state: HealthUiState, onOpenWater: () -> Unit, onConnec
             val avg = water.averageOrNull()
             if (avg == null) Muted("Aucune eau notée cette semaine.") else {
                 BigNumber("${liters(avg)} par jour")
-                Muted("En moyenne sur les jours notés. Touche pour le détail.")
+                Muted("En moyenne sur les jours notés.")
             }
-            WeekBars(dates, water, weekDescription("Eau par jour", dates, water) { liters(it) }, color = MaterialTheme.colorScheme.tertiary)
+            WeekBars(
+                dates, water, weekDescription("Eau par jour", dates, water) { liters(it) },
+                color = MaterialTheme.colorScheme.tertiary,
+                goal = state.week.lastOrNull()?.waterGoalMl?.toDouble(), format = { liters(it) },
+            )
         }
 
         // Sport
@@ -57,7 +73,11 @@ internal fun WeekSection(state: HealthUiState, onOpenWater: () -> Unit, onConnec
                 BigNumber("$count ${if (count > 1) "séances ou activités" else "séance ou activité"}")
                 if (minutes > 0) Muted("${hoursText(minutes)} au total.")
             }
-            WeekBars(dates, sport, weekDescription("Sport par jour", dates, sport) { if (it <= 1.0) "une séance" else hoursText(it.roundToInt()) }, color = MaterialTheme.colorScheme.secondary)
+            WeekBars(
+                dates, sport, weekDescription("Sport par jour", dates, sport) { if (it <= 1.0) "une séance" else hoursText(it.roundToInt()) },
+                color = MaterialTheme.colorScheme.secondary,
+                format = { if (it <= 1.0) "une séance" else hoursText(it.roundToInt()) },
+            )
         }
 
         if (state.watchConnected) {
@@ -69,7 +89,7 @@ internal fun WeekSection(state: HealthUiState, onOpenWater: () -> Unit, onConnec
                     BigNumber("${formatThousands(avg.roundToInt())} pas par jour")
                     Muted("En moyenne sur les jours reçus de ta montre.")
                 }
-                WeekBars(dates, steps, weekDescription("Pas par jour", dates, steps) { "${formatThousands(it.roundToInt())} pas" })
+                WeekBars(dates, steps, weekDescription("Pas par jour", dates, steps) { "${formatThousands(it.roundToInt())} pas" }, format = { "${formatThousands(it.roundToInt())} pas" })
             }
 
             // Sommeil
@@ -87,7 +107,7 @@ internal fun WeekSection(state: HealthUiState, onOpenWater: () -> Unit, onConnec
                     }
                     else -> Muted("Pas de données cette semaine.")
                 }
-                WeekBars(dates, sleep, weekDescription("Sommeil par nuit", dates, sleep) { hoursText(it.roundToInt()) })
+                WeekBars(dates, sleep, weekDescription("Sommeil par nuit", dates, sleep) { hoursText(it.roundToInt()) }, format = { hoursText(it.roundToInt()) })
             }
         } else if (state.status != null) {
             AddWatchCard(state.status, onConnect)

@@ -75,6 +75,7 @@ import com.bidaboss.healthy.ui.theme.HealthyTheme
 import com.bidaboss.healthy.ui.theme.healthyTonalIconButtonColors
 import com.bidaboss.healthy.ui.PhotoBackground
 import com.bidaboss.healthy.ui.PhotoTab
+import com.bidaboss.healthy.ui.PhotoOutlinedButton
 import com.bidaboss.healthy.ui.PhotoTitle
 import com.bidaboss.healthy.workout.data.FreeActivity
 import com.bidaboss.healthy.workout.data.SessionLog
@@ -160,13 +161,13 @@ fun WorkoutScreen(
                         }
                     }
                 }
-                OutlinedButton(onClick = onOpenRoutes, modifier = Modifier.fillMaxWidth()) {
+                PhotoOutlinedButton(onClick = onOpenRoutes, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Rounded.Route, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(" Mes trajets")
                 }
 
                 // Liste unique : séances prévues et activités ajoutées, mêmes cartes, comptées pareil dans la série.
-                Text("Cette semaine", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onBackground)
+                PhotoTitle("Cette semaine", style = MaterialTheme.typography.titleLarge)
                 if (plan == null) {
                     EmptyState(ThemeTexts.current.noPlan, action = "Importer mon plan", onAction = onImport)
                 } else {

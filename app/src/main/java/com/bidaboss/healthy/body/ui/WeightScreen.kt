@@ -37,6 +37,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bidaboss.healthy.core.body.WeighIn
 import com.bidaboss.healthy.ui.healthyViewModelFactory
 import com.bidaboss.healthy.ui.toInputText
+import androidx.compose.ui.platform.LocalContext
+import com.bidaboss.healthy.ui.WaterFeedback
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -51,6 +53,7 @@ fun WeightScreen(
     viewModel: WeightViewModel = viewModel(factory = healthyViewModelFactory { WeightViewModel(it.bodyRepository) }),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -73,7 +76,7 @@ fun WeightScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 state.form.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                Button(onClick = viewModel::save, modifier = Modifier.fillMaxWidth()) { Text("Enregistrer") }
+                Button(onClick = { WaterFeedback.tick(context); viewModel.save() }, modifier = Modifier.fillMaxWidth()) { Text("Enregistrer") }
             }
         }
 

@@ -139,7 +139,7 @@ private fun Last7Nights(state: HealthUiState, nights: List<WatchDayRecord>) {
     MetricCard("Les 7 dernières nuits") {
         val avg = values.averageOrNull()
         if (avg != null) BigNumber("${hoursText(avg.roundToInt())} par nuit en moyenne")
-        WeekBars(dates, values, weekDescription("Sommeil par nuit", dates, values) { hoursText(it.roundToInt()) })
+        WeekBars(dates, values, weekDescription("Sommeil par nuit", dates, values) { hoursText(it.roundToInt()) }, format = { hoursText(it.roundToInt()) })
         nights.reversed().forEach { n ->
             Fact(chartDate(n.date).replaceFirstChar(Char::uppercase), hoursText(n.sleepMin!!))
         }

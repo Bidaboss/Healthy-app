@@ -1,25 +1,28 @@
 package com.bidaboss.healthy.ui
 
 import androidx.annotation.DrawableRes
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
+import kotlin.math.roundToInt
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.bidaboss.healthy.R
 import com.bidaboss.healthy.settings.data.AppTheme
@@ -28,48 +31,75 @@ import com.bidaboss.healthy.ui.theme.HealthyTheme
 /** Les 4 onglets qui ont un décor photo (Moi n'en a pas). */
 enum class PhotoTab { TODAY, MEALS, WORKOUT, HEALTH }
 
-/** Hauteur de la photo, comme dans le prototype : elle couvre le haut de l'écran, derrière les cartes. */
-private val PhotoHeight = 520.dp
+/**
+ * Hauteur de la photo, comme dans le prototype (champ `fToday`) : elle couvre les 1040 dp du haut du contenu,
+ * pas seulement un bandeau d'en-tête. Dessous, c'est la couleur de fond.
+ */
+private val PhotoHeight = 1040.dp
 
 /**
- * Fond photo d'un onglet (refonte du 23/11/2026) : la photo du thème couvre le haut de l'écran derrière les
- * cartes et se fond peu à peu dans la couleur de fond. À poser **dans** le contenu qui défile (colonne avec
- * `verticalScroll`, ou en-tête de liste) : la photo défile alors avec lui. Le contenu se pose par-dessus ;
- * les titres sur la photo utilisent [PhotoTitle] (blanc, ombre douce).
+ * Fond photo d'un onglet (refonte du 23/11/2026, aligné sur le prototype) : la photo du thème, recadrée
+ * « cover » et centrée en haut, couvre les 1040 dp du haut du **contenu** derrière les cartes, défile avec lui
+ * et se fond dans la couleur de fond (voile 0,38 → 0,18 à 22 % → 0,52 à 55 % → couleur de fond à 100 %).
+ * Elle est dessinée derrière le contenu sans compter dans sa taille. Les titres posés dessus utilisent
+ * [PhotoTitle] (blanc, ombre douce).
+ *
+ * À poser autour du contenu qui défile (colonne avec `verticalScroll`) : la photo bouge avec lui. Pour une
+ * `LazyColumn`, utiliser [photoBackdrop] sur son parent fixe avec le décalage de la liste.
  */
 @Composable
 fun PhotoBackground(
     tab: PhotoTab,
     modifier: Modifier = Modifier,
     theme: AppTheme = HealthyTheme.ambiance.theme,
-    photoHeight: Dp = PhotoHeight,
     content: @Composable BoxScope.() -> Unit,
 ) {
+    Box(modifier.fillMaxWidth().photoBackdrop(tab, theme), content = content)
+}
+
+/**
+ * Dessine le fond photo derrière ce composant. [scrollPx] donne de combien le contenu a défilé (0 pour un
+ * contenu qui défile avec le composant lui-même, le décalage de la liste pour un parent fixe).
+ */
+@Composable
+fun Modifier.photoBackdrop(
+    tab: PhotoTab,
+    theme: AppTheme = HealthyTheme.ambiance.theme,
+    scrollPx: () -> Int = { 0 },
+): Modifier {
+    val photo = ImageBitmap.imageResource(PhotoBackgrounds.drawableOf(tab, theme))
+    val scrim = PhotoBackgrounds.scrimOf(theme)
     val fade = MaterialTheme.colorScheme.background
-    Box(modifier.fillMaxWidth()) {
-        Image(
-            painter = painterResource(PhotoBackgrounds.drawableOf(tab, theme)),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            alignment = Alignment.TopCenter,
-            modifier = Modifier.fillMaxWidth().height(photoHeight),
-        )
-        // Voile sombre léger en haut pour la lisibilité des titres blancs, puis fondu vers la couleur de fond.
-        val scrim = PhotoBackgrounds.scrimOf(theme)
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(photoHeight)
-                .background(
-                    Brush.verticalGradient(
-                        0f to scrim.copy(alpha = 0.38f),
-                        0.22f to scrim.copy(alpha = 0.18f),
-                        0.55f to scrim.copy(alpha = 0.52f),
-                        1f to fade,
-                    ),
+    val height = with(LocalDensity.current) { PhotoHeight.toPx() }
+    return drawBehind {
+        val offset = scrollPx()
+        // Entièrement défilée hors de l'écran : rien à dessiner.
+        if (offset >= height) return@drawBehind
+        val w = size.width
+        // « cover » centré en haut : on garde la partie centrale de la photo qui remplit w × height.
+        val scale = maxOf(w / photo.width, height / photo.height)
+        val srcW = minOf(photo.width.toFloat(), w / scale)
+        val srcH = minOf(photo.height.toFloat(), height / scale)
+        translate(top = -offset.toFloat()) {
+            drawImage(
+                image = photo,
+                srcOffset = IntOffset(((photo.width - srcW) / 2f).roundToInt(), 0),
+                srcSize = IntSize(srcW.roundToInt(), srcH.roundToInt()),
+                dstSize = IntSize(w.roundToInt(), height.roundToInt()),
+                filterQuality = FilterQuality.Medium,
+            )
+            drawRect(
+                brush = Brush.verticalGradient(
+                    0f to scrim.copy(alpha = 0.38f),
+                    0.22f to scrim.copy(alpha = 0.18f),
+                    0.55f to scrim.copy(alpha = 0.52f),
+                    1f to fade,
+                    startY = 0f,
+                    endY = height,
                 ),
-        )
-        content()
+                size = Size(w, height),
+            )
+        }
     }
 }
 

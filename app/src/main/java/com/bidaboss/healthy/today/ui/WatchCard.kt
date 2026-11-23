@@ -46,8 +46,8 @@ fun WatchCard(state: WatchUiState, onAdd: (WatchSession) -> Unit, onIgnore: (Wat
                     // Calories actives : indicatives, elles ne s'ajoutent pas à l'objectif (docs/decisions.md).
                     WatchStat("Calories", day.activeKcal?.let { formatThousands(it) }, "kcal", Modifier.weight(1f))
                     WatchStat("Pas", formatThousands(day.steps.toInt()), null, Modifier.weight(1f))
-                    // La distance du jour arrive avec le lot 4 (Santé) : « – » d'ici là.
-                    WatchStat("Distance", null, "km", Modifier.weight(1f))
+                    // Distance du jour (lot 4) : « – » si la montre n'en envoie pas ou si elle n'est pas autorisée.
+                    WatchStat("Distance", day.distanceM?.let { "%.1f".format(java.util.Locale.FRENCH, it / 1000.0) }, "km", Modifier.weight(1f))
                     WatchStat("Cœur", day.avgBpm?.toString(), "bpm", Modifier.weight(1f))
                 }
             }

@@ -78,7 +78,7 @@ Précisions : l'objectif de fibres de l'app (30 g) et de protéines (1,6 g/kg) r
 |---|---|---|
 | Sommeil | 7 heures minimum par nuit pour les adultes de 18 à 64 ans ; moyenne observée en France 7 h 32 (18-79 ans, 2024) | Santé publique France |
 
-**Non trouvé** : pas par jour officiels (tendance affichée sans zone).
+**Indicatif, à confirmer (non officiel)** : pas par jour. Aucun repère officiel en pas (OMS, SPF, ANSES s'expriment en minutes d'activité). Repère pratique cité par l'Assurance Maladie, non lu à la source : environ 10 000 pas par jour chez l'adulte, 7 000 à 10 000 au-delà de 65 ans ; la littérature récente situe les bénéfices dès 7 000 pas. L'app affiche **7 000 à 10 000 pas** comme zone « indicative », avec la mention « repère pratique, pas une recommandation officielle ».
 
 ---
 
@@ -89,7 +89,7 @@ Précisions : l'objectif de fibres de l'app (30 g) et de protéines (1,6 g/kg) r
 - [ ] Sélecteur **7 jours / 28 jours** (28 par défaut).
 - [ ] Une ligne par repère mesurable avec les données de l'app (calories, protéines, fibres, eau, activité, sommeil, pas) : valeur de le propriétaire, barre avec la zone du repère, texte du repère.
 - [ ] Sous chaque ligne : **source** et **statut** (vérifié / à confirmer ; tous les repères de la table sont aujourd'hui vérifiés). Les repères de l'app sont étiquetés « Objectif de l'app », pas « officiel ».
-- [ ] Les repères sans chiffre officiel (sommeil, pas) montrent la tendance sans zone.
+- [ ] Les repères indicatifs (pas) montrent leur zone avec la mention « indicatif, non officiel » ; sans donnée de montre, la ligne est masquée.
 - [ ] Les repères hebdomadaires (poisson, légumes secs, viande, charcuterie) ne sont affichés que si les repas portent l'information nécessaire ; sinon ils sont masqués, jamais à zéro.
 
 ### 2. Carte sur Aujourd'hui

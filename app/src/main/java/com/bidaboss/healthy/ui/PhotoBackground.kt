@@ -14,6 +14,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.imageResource
@@ -71,35 +72,37 @@ fun Modifier.photoBackdrop(
     val scrim = PhotoBackgrounds.scrimOf(theme)
     val fade = MaterialTheme.colorScheme.background
     val height = with(LocalDensity.current) { PhotoHeight.toPx() }
-    return drawBehind {
-        val offset = scrollPx()
-        // Entièrement défilée hors de l'écran : rien à dessiner.
-        if (offset >= height) return@drawBehind
-        val w = size.width
-        // « cover » centré en haut : on garde la partie centrale de la photo qui remplit w × height.
-        val scale = maxOf(w / photo.width, height / photo.height)
-        val srcW = minOf(photo.width.toFloat(), w / scale)
-        val srcH = minOf(photo.height.toFloat(), height / scale)
-        translate(top = -offset.toFloat()) {
-            drawImage(
-                image = photo,
-                srcOffset = IntOffset(((photo.width - srcW) / 2f).roundToInt(), 0),
-                srcSize = IntSize(srcW.roundToInt(), srcH.roundToInt()),
-                dstSize = IntSize(w.roundToInt(), height.roundToInt()),
-                filterQuality = FilterQuality.Medium,
-            )
-            drawRect(
-                brush = Brush.verticalGradient(
-                    0f to scrim.copy(alpha = 0.38f),
-                    0.22f to scrim.copy(alpha = 0.18f),
-                    0.55f to scrim.copy(alpha = 0.52f),
-                    1f to fade,
-                    startY = 0f,
-                    endY = height,
-                ),
-                size = Size(w, height),
-            )
-        }
+    return drawBehind { drawPhotoBackdrop(photo, scrim, fade, height, scrollPx()) }
+}
+
+/** Le dessin du fond photo (voir [photoBackdrop]) ; [height] est la hauteur couverte, en pixels. */
+internal fun DrawScope.drawPhotoBackdrop(photo: ImageBitmap, scrim: Color, fade: Color, height: Float, offset: Int) {
+    // Entièrement défilée hors de l'écran : rien à dessiner.
+    if (offset >= height) return
+    val w = size.width
+    // « cover » centré en haut : on garde la partie centrale de la photo qui remplit w × height.
+    val scale = maxOf(w / photo.width, height / photo.height)
+    val srcW = minOf(photo.width.toFloat(), w / scale)
+    val srcH = minOf(photo.height.toFloat(), height / scale)
+    translate(top = -offset.toFloat()) {
+        drawImage(
+            image = photo,
+            srcOffset = IntOffset(((photo.width - srcW) / 2f).roundToInt(), 0),
+            srcSize = IntSize(srcW.roundToInt(), srcH.roundToInt()),
+            dstSize = IntSize(w.roundToInt(), height.roundToInt()),
+            filterQuality = FilterQuality.Medium,
+        )
+        drawRect(
+            brush = Brush.verticalGradient(
+                0f to scrim.copy(alpha = 0.38f),
+                0.22f to scrim.copy(alpha = 0.18f),
+                0.55f to scrim.copy(alpha = 0.52f),
+                1f to fade,
+                startY = 0f,
+                endY = height,
+            ),
+            size = Size(w, height),
+        )
     }
 }
 

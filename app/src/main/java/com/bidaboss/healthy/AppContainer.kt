@@ -33,6 +33,7 @@ import com.bidaboss.healthy.settings.reminder.MotivationScheduler
 import com.bidaboss.healthy.settings.reminder.WaterReminderScheduler
 import com.bidaboss.healthy.today.data.HealthWeekRepository
 import com.bidaboss.healthy.today.data.MaintenanceRepository
+import com.bidaboss.healthy.today.data.ReferencesRepository
 import com.bidaboss.healthy.today.data.MeProgressRepository
 import com.bidaboss.healthy.today.data.TodaySnapshotRepository
 import com.bidaboss.healthy.body.data.MaintenanceInfo
@@ -112,6 +113,7 @@ class AppContainer(context: Context) {
 
     /** Pousse et badges pour l'onglet Moi : `body` ne dépend pas de `today`. */
     val meProgress: Flow<MeProgress> = meProgressRepository.observe()
+    val referencesRepository = ReferencesRepository(mealRepository, bodyRepository, workoutLogRepository, watchRepository)
     private val maintenanceRepository = MaintenanceRepository(mealRepository, bodyRepository)
     val maintenanceInfo: (LocalDate) -> Flow<MaintenanceInfo?> = maintenanceRepository::observe
     val todaySnapshotRepository = TodaySnapshotRepository(mealRepository, bodyRepository, workoutRepository, workoutLogRepository)

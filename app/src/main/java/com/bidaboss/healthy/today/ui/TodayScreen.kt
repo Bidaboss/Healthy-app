@@ -66,6 +66,7 @@ fun TodayScreen(
     onOpenBadges: () -> Unit,
     onOpenWeeklyRecap: () -> Unit,
     onOpenWatch: () -> Unit,
+    onOpenReferences: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TodayViewModel = viewModel(
         factory = healthyViewModelFactory { TodayViewModel(it.mealRepository, it.workoutRepository, it.bodyRepository, it.workoutLogRepository) },
@@ -125,6 +126,7 @@ fun TodayScreen(
                     WaterCard(water, onAdd = waterViewModel::add, onUndo = waterViewModel::undo, onOpen = onOpenWater)
                     WatchCard(watch, onAdd = watchViewModel::add, onIgnore = watchViewModel::ignore, onOpen = onOpenWatch)
                     TodaySessionCard(state, onStart = { choosingDuration = true })
+                    ReferencesCard(onOpenReferences)
                     if (recapWeek != null) WeeklyRecapCard(onOpenWeeklyRecap)
                 }
             }

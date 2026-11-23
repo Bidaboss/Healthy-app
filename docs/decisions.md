@@ -241,6 +241,29 @@ Validées par le propriétaire avec le fil Design (13/11/2026), ordre conseillé
   réel seulement s'il y a un ajustement. Rappel affiché : l'estimation est approximative (repas photographiés à ±20-30 %,
   poids qui varie avec l'eau et le sel).
 
+## Repères nationaux (le propriétaire, 23/11/2026, PRD `docs/prd/reperes-nationaux.md`, partie 1)
+
+- L'app place les valeurs du propriétaire face à des repères, sans jugement ni avis médical (phrase d'avertissement sur
+  l'écran). Écran **Mes repères** : accès par la carte « Tes repères · 28 jours » d'Aujourd'hui (trois lignes, bouton
+  « Voir tous les repères ») et par la carte « Mes repères » de Moi ; pas de nouvel onglet. Sélecteur 7 / 28 jours (28 par défaut).
+- Lignes affichées, avec **la source et le statut écrits sous chacune** : calories (face au maintien, ±10 %), protéines (g/kg),
+  fibres, glucides et lipides (part de l'énergie), eau, activité, sommeil, pas. Valeurs officielles « vérifiées » (table fournie
+  par le propriétaire, lue le 23/11/2026) : protéines 0,83 g/kg et fibres 25 g (EFSA), glucides 45 à 60 % et lipides 20 à 35 % de
+  l'énergie (EFSA), eau 2,5 L par jour pour un homme et 2 L pour une femme (EFSA), activité 150 à 300 min par semaine (OMS),
+  sommeil 7 h minimum de 18 à 64 ans (Santé publique France). L'eau officielle **inclut l'eau des aliments** : la ligne le dit
+  (« plus large que l'eau notée »). Les objectifs de l'app (maintien, protéines 1,6 g/kg, fibres 30 g, eau du jour) sont étiquetés
+  « Objectif de l'app », lus à côté du repère officiel et jamais confondus avec lui.
+- **Sans source** : les pas (tendance seule, sans zone ; statut « à confirmer »). Le sommeil hors 18 à 64 ans passe aussi en tendance.
+  Sodium (2 g), sucres, graisses saturées et repères de Santé publique France par aliment (fruits et légumes, laitiers, poisson...)
+  sont dans la table mais **masqués** : l'app ne les mesure pas, et rien n'est jamais affiché à zéro. Les adresses des sources
+  ne sont pas encore renseignées (`url` vide), à relire.
+- Mots : « dans le repère », « sous le repère », « au-dessus du repère », jamais « mauvais » ; aucune couleur d'alerte ; un minimum
+  (protéines, fibres, sommeil) n'est jamais « au-dessus ».
+- Cas limites : moins de 80 % des jours avec repas notés : « repères indicatifs » ; profil incomplet : les lignes liées au poids
+  sont masquées avec une phrase d'invitation ; sans montre : l'activité vient des séances de l'app, sommeil et pas sont absents.
+  Un jour ne compte pour les protéines et les fibres que si aucun de ses repas n'est en calories seules.
+- Aucune notification, aucun réseau, aucun changement de base. La partie 2 (dossier pour l'IA et analyse reçue) est un PRD à part.
+
 ## Suivi du corps
 
 - Taille dans le profil (Le propriétaire, 11/11/2026).

@@ -54,8 +54,8 @@ class PousseRenderTest {
                 row++
             }
         }
-        // Aperçu pour la relecture visuelle : écrit seulement si on le demande (-Dpousse.out=chemin.png).
-        System.getProperty("pousse.out")?.let { path ->
+        // Aperçu pour la relecture visuelle : écrit seulement si on le demande (variable POUSSE_OUT=chemin.png).
+        (System.getenv("POUSSE_OUT") ?: System.getProperty("pousse.out"))?.let { path ->
             File(path).outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
         }
     }

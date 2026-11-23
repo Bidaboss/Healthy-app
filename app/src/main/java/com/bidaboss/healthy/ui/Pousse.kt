@@ -110,9 +110,9 @@ private class Paints {
     val knotBrush = bandanaKnot.getBounds().let { linear(it, 0f, 0f, 0f, 1f, 0f to c(0xE5584A), 1f to c(0xA12D22)) }
     val hatBrush = Brush.verticalGradient(0f to c(0xF8E2A6), 1f to c(0xD9AE55), startY = 14f, endY = 52f)
     val brimBrush = Brush.verticalGradient(0f to c(0xF8E2A6), 1f to c(0xD9AE55), startY = 45f, endY = 61f)
-    val bagBrush = radial(androidx.compose.ui.geometry.Rect(80f, 68f, 98f, 100f), 0.35f, 0.3f, 0.8f, 0f to c(0xC4894A), 1f to c(0x7A4A1E))
+    val bagBrush = radial(androidx.compose.ui.geometry.Rect(80f, 68f, 98f, 100f), 0.35f, 0.3f, 0.8f, 0f to c(0xF2B35A), 1f to c(0xB8741F))
     val flower = radial(androidx.compose.ui.geometry.Rect(-13.2f, -15f, 13.2f, 14f), 0.4f, 0.35f, 0.7f, 0f to c(0xFFC1A8), 1f to c(0xF0603C))
-    val fruit = radial(androidx.compose.ui.geometry.Rect(35.6f, 51.6f, 44.4f, 60.4f), 0.35f, 0.3f, 0.75f, 0f to c(0xFF9A8A), 1f to c(0xC73A2E))
+    val fruit = radial(androidx.compose.ui.geometry.Rect(-4.4f, -4.4f, 4.4f, 4.4f), 0.35f, 0.3f, 0.75f, 0f to c(0xFF9A8A), 1f to c(0xC73A2E))
 }
 
 private val paints by lazy { Paints() }
@@ -133,7 +133,7 @@ internal fun DrawScope.drawPousse(
     val hasTrunk = growth >= Growth.SHRUB
     // fullSize : les illustrations d'exercices (membres dessinés autour) veulent le corps à pleine taille.
     val s = if (fullSize) 1f else when (growth) {
-        Growth.LEAF -> 0.52f
+        Growth.LEAF -> 0.62f
         Growth.SPROUT -> 0.7f
         Growth.SHRUB -> 0.88f
         Growth.TREE -> 0.8f
@@ -152,15 +152,34 @@ internal fun DrawScope.drawPousse(
             drawPath(svg("M31 112 Q60 103 89 112"), c(0x8A6238), alpha = 0.7f, style = Stroke(width = 2f))
             drawPath(svg("M20 112 L22 104 L26 112 M96 112 L99 103 L102 112"), c(0x3FA66B), style = Stroke(width = 2.4f, cap = StrokeCap.Round))
         }
-        if (theme == AppTheme.TRAVEL) drawBackpack(p)
+        if (theme == AppTheme.TRAVEL) drawBackpack(p, hasTrunk)
         if (hasTrunk) drawTree(p, growth) else drawLeafBody(p, growth)
         withTransform({ if (hasTrunk) scale(0.78f, 0.78f, pivot = Offset(60f, 78f)) }) { drawFace(mood) }
-        withTransform({ scale(if (hasTrunk) 0.72f else 0.8f, 1f, pivot = Offset(60f, 0f)) }) {
+        if (hasTrunk) {
+            // Avec un tronc, la tenue se pose sur le haut du tronc, à l'échelle du tronc.
             when (theme) {
-                AppTheme.PIRATE -> drawPirate(p)
-                AppTheme.TRAVEL -> drawStrawHat(p)
+                AppTheme.PIRATE -> {
+                    withTransform({ translate(0f, 4f); scale(0.6f, 0.6f, pivot = Offset(60f, 56f)) }) { drawBandana(p) }
+                    drawEyePatch(Offset(70.2f, 73.3f), 5.5f, Offset(53f, 66.5f))
+                }
+                AppTheme.TRAVEL -> {
+                    withTransform({ scale(0.62f, 0.62f, pivot = Offset(60f, 56f)) }) { drawStrawHat(p) }
+                    drawBackpackStrap(-8f)
+                }
                 else -> Unit
             }
+        } else {
+            withTransform({ scale(0.8f, 1f, pivot = Offset(60f, 0f)) }) {
+                when (theme) {
+                    AppTheme.PIRATE -> {
+                        drawBandana(p)
+                        drawEyePatch(Offset(73f, 73f), 9f, Offset(34f, 63f))
+                    }
+                    AppTheme.TRAVEL -> drawStrawHat(p)
+                    else -> Unit
+                }
+            }
+            if (theme == AppTheme.TRAVEL) drawBackpackStrap(0f)
         }
     }
     if (mood == Mood.PROUD) {
@@ -217,8 +236,9 @@ private fun DrawScope.drawTree(p: Paints, growth: Growth) {
         leaf(p, 60f, 56f, -18f, 1.4f, true); leaf(p, 60f, 56f, 18f, 1.4f, false)
         leaf(p, 60f, 56f, 0f, 1.45f, false)
         flower(p, 60f, 4f, 0.95f); flower(p, 27f, 24f, 0.7f); flower(p, 93f, 24f, 0.7f)
-        drawCircle(p.fruit, radius = 4.4f, center = Offset(40f, 56f))
-        drawCircle(p.fruit, radius = 4.4f, center = Offset(80f, 54f))
+        listOf(Offset(36f, 44f), Offset(84f, 42f)).forEach { at ->
+            withTransform({ translate(at.x, at.y) }) { drawCircle(p.fruit, radius = 4.4f, center = Offset.Zero) }
+        }
     }
     drawPath(trunkRoots, p.rootsBrush)
     drawPath(trunk, p.trunkBrush)
@@ -258,15 +278,19 @@ private fun DrawScope.drawFace(mood: Mood) {
     }
 }
 
-/** Bandana rouge à pois, nœud à droite, cache-œil sur l'œil droit (comme l'icône). */
-private fun DrawScope.drawPirate(p: Paints) {
+/** Bandana rouge à pois, nœud à droite. */
+private fun DrawScope.drawBandana(p: Paints) {
     drawPath(bandana, p.bandanaBrush)
     drawPath(svg("M27 62 Q60 28 93 62"), c(0xFFB4A8), alpha = 0.5f, style = Stroke(width = 1.4f))
     drawPath(bandanaKnot, p.knotBrush)
     listOf(Offset(46f, 44f), Offset(60f, 38f), Offset(74f, 44f)).forEach { drawCircle(Color.White, radius = 2f, center = it, alpha = 0.9f) }
-    drawLine(PousseInk, Offset(34f, 63f), Offset(86f, 83f), strokeWidth = 2.6f)
-    drawCircle(PousseInk, radius = 9f, center = Offset(73f, 73f))
-    drawOval(Color.White, topLeft = Offset(67f, 68f), size = Size(6f, 4f), alpha = 0.3f)
+}
+
+/** Cache-œil sur l'œil droit (comme l'icône) ; [strapFrom] = début de la lanière côté gauche. */
+private fun DrawScope.drawEyePatch(center: Offset, radius: Float, strapFrom: Offset) {
+    drawLine(PousseInk, strapFrom, center, strokeWidth = 2.6f)
+    drawCircle(PousseInk, radius = radius, center = center)
+    drawOval(Color.White, topLeft = Offset(center.x - radius * 0.7f, center.y - radius * 0.55f), size = Size(radius * 0.7f, radius * 0.45f), alpha = 0.3f)
 }
 
 /** Chapeau de paille à ruban bleu. */
@@ -280,10 +304,24 @@ private fun DrawScope.drawStrawHat(p: Paints) {
     }
 }
 
-/** Sac à dos de voyage, dépasse derrière le corps à droite. */
-private fun DrawScope.drawBackpack(p: Paints) {
-    drawRoundRect(p.bagBrush, topLeft = Offset(80f, 68f), size = Size(18f, 32f), cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f))
-    drawPath(svg("M83 74 Q89 70 95 74"), c(0xE8C08A), alpha = 0.8f, style = Stroke(width = 2f, cap = StrokeCap.Round))
+/** Sac à dos de voyage (orange kaki, pour le distinguer du tronc), derrière le corps à droite. */
+private fun DrawScope.drawBackpack(p: Paints, tree: Boolean) {
+    val x = if (tree) 70f else 80f
+    withTransform({ translate(x - 80f, 0f) }) {
+        drawRoundRect(p.bagBrush, topLeft = Offset(80f, 68f), size = Size(18f, 32f), cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f))
+        // Rabat plus foncé et boucle.
+        drawRoundRect(c(0x9A5B14), topLeft = Offset(80f, 68f), size = Size(18f, 13f), cornerRadius = androidx.compose.ui.geometry.CornerRadius(7f))
+        drawCircle(c(0xFFE7A8), radius = 1.8f, center = Offset(89f, 79f))
+        drawPath(svg("M83 74 Q89 70 95 74"), c(0xFFE7A8), alpha = 0.8f, style = Stroke(width = 2f, cap = StrokeCap.Round))
+    }
+}
+
+/** Bretelle visible sur le corps, du haut du dos vers le sac. */
+private fun DrawScope.drawBackpackStrap(dx: Float) {
+    withTransform({ translate(dx, 0f) }) {
+        drawPath(svg("M84 58 Q90 78 86 100"), c(0xB8741F), style = Stroke(width = 4f, cap = StrokeCap.Round))
+        drawPath(svg("M84 58 Q90 78 86 100"), c(0xF2B35A), alpha = 0.6f, style = Stroke(width = 1.4f, cap = StrokeCap.Round))
+    }
 }
 
 /** Petite flamme de la série de semaines actives. */

@@ -300,7 +300,11 @@ fun MealsScreen(
                         "Les 7 derniers jours (repas, eau, protéines, fibres), pour que Claude t'aide à ajuster.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp),
+                        // Sur une pastille de la couleur des cartes : lisible sur la photo comme sur le fond uni.
+                        modifier = Modifier
+                            .padding(top = 8.dp)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest, RoundedCornerShape(12.dp))
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
                     )
                 }
             }

@@ -81,7 +81,10 @@ Exemples : [`repas-dejeuner.json`](examples/repas-dejeuner.json), [`repas-collat
 
 L'app écrit aussi ce type : « Partager ce repas » (écran d'un repas) produit un fichier `meal` complet
 (`MealWriter`, nouvel `id` à chaque partage, jamais de `replaces`, heure avec le décalage du téléphone),
-qu'un proche importe tel quel. Réécrire `repas-dejeuner.json` redonne exactement ce fichier (`MealWriterTest`).
+qu'un proche importe tel quel. L'envoi se fait par le partage Android, en fichier `.json`. Pour une autre portion
+(La moitié, Un tiers, un pourcentage), l'app multiplie `quantity_g`, `kcal` et les macros et n'écrit plus `portion`
+(texte libre) ; le format ne change pas (`SavedFoodsTest`). Réécrire `repas-dejeuner.json` redonne exactement ce
+fichier (`MealWriterTest`).
 
 ## Type `workout_plan` : un plan sportif
 

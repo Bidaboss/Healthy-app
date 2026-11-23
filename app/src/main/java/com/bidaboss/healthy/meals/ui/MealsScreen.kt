@@ -17,14 +17,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.rounded.ContentPaste
+import androidx.compose.material.icons.rounded.Bookmark
+import androidx.compose.material.icons.rounded.BookmarkBorder
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Cookie
-import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material.icons.rounded.DinnerDining
 import androidx.compose.material.icons.rounded.FreeBreakfast
 import androidx.compose.material.icons.rounded.LocalBar
@@ -33,6 +35,7 @@ import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.StarBorder
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,6 +50,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,7 +66,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bidaboss.healthy.core.body.Maintenance
 import com.bidaboss.healthy.core.importformat.MealType
+import android.content.Context
 import com.bidaboss.healthy.meals.data.Drink
+import com.bidaboss.healthy.meals.data.Food
 import com.bidaboss.healthy.meals.data.Meal
 import com.bidaboss.healthy.ui.EmptyState
 import com.bidaboss.healthy.ui.ThemeTexts
@@ -73,7 +79,10 @@ import com.bidaboss.healthy.ui.color
 import com.bidaboss.healthy.ui.formatGrams
 import com.bidaboss.healthy.ui.formatKcal
 import com.bidaboss.healthy.ui.healthyViewModelFactory
-import com.bidaboss.healthy.ui.mealsBackground
+import com.bidaboss.healthy.ui.PhotoBackground
+import com.bidaboss.healthy.ui.PhotoTab
+import com.bidaboss.healthy.ui.PhotoTitle
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -83,17 +92,31 @@ import java.util.Locale
 
 private val dayFormat = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.FRENCH)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MealsScreen(
     onAddMeal: (LocalDate) -> Unit,
     onEditMeal: (Long) -> Unit,
-    onImport: () -> Unit,
     onOpenRecipes: () -> Unit,
-    onOpenScannedProducts: () -> Unit,
+    onOpenSavedFoods: () -> Unit,
+    onCreateFood: () -> Unit,
+    /** Colle le presse-papiers dans l'import : l'aperçu apparaît dans la carte en tête de liste. */
+    onImportFromAi: () -> Unit,
+    /** La carte « Importer un repas de mon IA » (fournie par l'écran qui sait importer : Repas ne dépend pas d'importexport). */
+    importCard: @Composable () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: MealsViewModel = viewModel(factory = healthyViewModelFactory { MealsViewModel(it.mealRepository, it.maintenanceKcal, it.exportMealReport) }),
+    viewModel: MealsViewModel = viewModel(
+        factory = healthyViewModelFactory {
+            MealsViewModel(it.mealRepository, it.maintenanceKcal, it.exportMealReport, it.savedFoodRepository)
+        },
+    ),
+    savedFoodsViewModel: SavedFoodsViewModel = viewModel(factory = healthyViewModelFactory { SavedFoodsViewModel(it.savedFoodRepository) }),
+    recipesViewModel: RecipesViewModel = viewModel(factory = healthyViewModelFactory { RecipesViewModel(it.recipeRepository) }),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val savedKeys by viewModel.savedKeys.collectAsStateWithLifecycle()
+    val savedFoods by savedFoodsViewModel.foods.collectAsStateWithLifecycle()
+    val recipes by recipesViewModel.recipes.collectAsStateWithLifecycle()
 
     LifecycleResumeEffect(Unit) {
         viewModel.onResume()
@@ -114,8 +137,24 @@ fun MealsScreen(
         viewModel.onReportShared()
     }
 
-    // Scan depuis l'onglet : le produit va au repas en cours, avec un message et « Annuler ».
+    // « Partager ce repas » : un fichier au format d'import, à la portion de l'autre personne.
+    val mealToShare by viewModel.mealToShare.collectAsStateWithLifecycle()
+    LaunchedEffect(mealToShare) {
+        val json = mealToShare ?: return@LaunchedEffect
+        shareMealFile(context, json)
+        viewModel.onMealShared()
+    }
+
+    var showAddSheet by remember { mutableStateOf(false) }
     var scanning by remember { mutableStateOf(false) }
+    var searching by remember { mutableStateOf(false) }
+    var quickEntry by remember { mutableStateOf(false) }
+    var history by remember { mutableStateOf(false) }
+    var pickingSaved by remember { mutableStateOf(false) }
+    var pickingRecipe by remember { mutableStateOf(false) }
+    var sharing by remember { mutableStateOf<Meal?>(null) }
+
+    // Un aliment ajouté en un geste va au repas en cours, avec un message et « Annuler ».
     val snackbarHost = remember { SnackbarHostState() }
     val lastAdded by viewModel.lastAdded.collectAsStateWithLifecycle()
     LaunchedEffect(lastAdded) {
@@ -128,107 +167,115 @@ fun MealsScreen(
         if (result == SnackbarResult.ActionPerformed) viewModel.undoLastAdded() else viewModel.onAddedShown()
     }
 
-    Box(modifier = modifier.fillMaxSize().mealsBackground()) {
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+
+    Box(modifier = modifier.fillMaxSize()) {
         LazyColumn(
+            state = listState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
+            contentPadding = PaddingValues(bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = viewModel::previousDay) {
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Jour précédent")
-                    }
-                    Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = if (state.isToday) "Aujourd'hui" else state.date.format(dayFormat),
-                            style = MaterialTheme.typography.headlineSmall,
-                        )
-                        Text(
-                            text = "Total : ${formatKcal(state.totalKcal)}" +
-                                state.maintenanceKcal?.let { " sur $it kcal" }.orEmpty(),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                    IconButton(onClick = viewModel::nextDay) {
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Jour suivant")
+            item(key = "header") {
+                PhotoBackground(PhotoTab.MEALS, photoHeight = 300.dp) {
+                    Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp)) {
+                        PhotoTitle("Repas", modifier = Modifier.padding(start = 8.dp, top = 8.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = viewModel::previousDay) {
+                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Jour précédent", tint = Color.White)
+                            }
+                            Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                                PhotoTitle(
+                                    text = if (state.isToday) "Aujourd'hui" else state.date.format(dayFormat),
+                                    style = MaterialTheme.typography.titleLarge,
+                                )
+                                PhotoTitle(
+                                    text = "Total : ${formatKcal(state.totalKcal)}" +
+                                        state.maintenanceKcal?.let { " sur $it kcal" }.orEmpty(),
+                                    style = MaterialTheme.typography.titleMedium,
+                                )
+                            }
+                            IconButton(onClick = viewModel::nextDay) {
+                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Jour suivant", tint = Color.White)
+                            }
+                        }
+                        state.maintenanceKcal?.let { maintenance ->
+                            // Petite barre du total face au maintien : couleur d'écart pour un jour passé, neutre pour
+                            // aujourd'hui sauf dépassement net, comme sur Aujourd'hui.
+                            val band = when {
+                                state.totalKcal <= 0 -> null
+                                state.isToday -> Maintenance.bandSoFar(state.totalKcal, maintenance)
+                                else -> Maintenance.band(state.totalKcal, maintenance)
+                            }
+                            LinearProgressIndicator(
+                                progress = { (state.totalKcal / maintenance).toFloat().coerceIn(0f, 1f) },
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).height(8.dp),
+                                color = band?.color() ?: Color.White,
+                                trackColor = Color.White.copy(alpha = 0.3f),
+                                drawStopIndicator = {},
+                            )
+                        }
+                        if (!state.isToday) {
+                            TextButton(onClick = viewModel::goToToday) { Text("Revenir à aujourd'hui", color = Color.White) }
+                        }
                     }
                 }
-                if (state.caloriesOnlyMeals > 0) {
+            }
+            item(key = "import") {
+                Box(Modifier.padding(horizontal = 16.dp)) { importCard() }
+            }
+            if (state.caloriesOnlyMeals > 0) {
+                item(key = "calories-only") {
                     // Un repas en calories seules compte dans le total, mais pas dans les protéines ni les fibres.
                     Text(
                         if (state.caloriesOnlyMeals == 1) "1 repas sans détail : ses protéines et ses fibres ne sont pas comptées."
                         else "${state.caloriesOnlyMeals} repas sans détail : leurs protéines et leurs fibres ne sont pas comptées.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp),
                     )
-                }
-                state.maintenanceKcal?.let { maintenance ->
-                    // Petite barre du total face au maintien : couleur d'écart pour un jour passé, neutre pour
-                    // aujourd'hui sauf dépassement net, comme sur Aujourd'hui.
-                    val band = when {
-                        state.totalKcal <= 0 -> null
-                        state.isToday -> Maintenance.bandSoFar(state.totalKcal, maintenance)
-                        else -> Maintenance.band(state.totalKcal, maintenance)
-                    }
-                    LinearProgressIndicator(
-                        progress = { (state.totalKcal / maintenance).toFloat().coerceIn(0f, 1f) },
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(8.dp),
-                        color = band?.color() ?: MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                        drawStopIndicator = {},
-                    )
-                }
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    if (!state.isToday) {
-                        TextButton(onClick = viewModel::goToToday) { Text("Revenir à aujourd'hui") }
-                    } else {
-                        Row {
-                            TextButton(onClick = onOpenRecipes) { Text("Mes plats") }
-                            TextButton(onClick = onOpenScannedProducts) { Text("Mes produits") }
-                        }
-                    }
-                    // Action secondaire, discrète : le bouton principal reste « Ajouter un repas ».
-                    TextButton(onClick = onImport) {
-                        Icon(Icons.Rounded.ContentPaste, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Importer depuis ton IA")
-                    }
                 }
             }
             if (state.isToday) {
-                item(key = "scan") {
-                    OutlinedButton(onClick = { scanning = true }, modifier = Modifier.fillMaxWidth()) {
-                        Icon(Icons.Rounded.QrCodeScanner, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Scanner un produit")
-                    }
-                }
-                item(key = "drinks") { DrinkButtons(onAdd = viewModel::addDrink) }
+                item(key = "drinks") { Box(Modifier.padding(horizontal = 16.dp)) { DrinkButtons(onAdd = viewModel::addDrink) } }
             }
             if (state.groups.isEmpty()) {
                 item {
-                    EmptyState(ThemeTexts.current.noMeal + " Ajoute un repas avec le bouton en bas.")
+                    Box(Modifier.padding(horizontal = 16.dp)) {
+                        EmptyState(ThemeTexts.current.noMeal + " Ajoute un repas avec le bouton en bas.")
+                    }
                 }
             }
             state.groups.forEach { group ->
-                item(key = "header-${group.type.code}") { MealTypeHeader(group.type) }
+                item(key = "header-${group.type.code}") {
+                    Box(Modifier.padding(horizontal = 16.dp)) { MealTypeHeader(group.type) }
+                }
                 items(group.meals, key = { it.id }) { meal ->
-                    MealCard(meal, onClick = { onEditMeal(meal.id) }, onToggleFavorite = { viewModel.toggleFavorite(meal) })
+                    Box(Modifier.padding(horizontal = 16.dp)) {
+                        MealCard(
+                            meal = meal,
+                            savedKeys = savedKeys,
+                            onClick = { onEditMeal(meal.id) },
+                            onToggleFavorite = { viewModel.toggleFavorite(meal) },
+                            onToggleSaved = viewModel::toggleSaved,
+                            onShare = { sharing = meal },
+                        )
+                    }
                 }
             }
             item(key = "report") {
-                OutlinedButton(onClick = viewModel::exportReport, modifier = Modifier.fillMaxWidth()) {
-                    Text("Envoyer mon bilan repas à Claude")
+                Column(Modifier.padding(horizontal = 16.dp)) {
+                    OutlinedButton(onClick = viewModel::exportReport, modifier = Modifier.fillMaxWidth()) {
+                        Text("Envoyer mon bilan repas à Claude")
+                    }
+                    Text(
+                        "Les 7 derniers jours (repas, eau, protéines, fibres), pour que Claude t'aide à ajuster.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
                 }
-                Text(
-                    "Les 7 derniers jours (repas, eau, protéines, fibres), pour que Claude t'aide à ajuster.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
             }
         }
 
@@ -238,24 +285,123 @@ fun MealsScreen(
         )
 
         ExtendedFloatingActionButton(
-            onClick = { onAddMeal(state.date) },
+            onClick = { showAddSheet = true },
             icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-            text = { Text("Ajouter un repas") },
+            text = { Text("Ajouter") },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
         )
     }
 
+    if (showAddSheet) {
+        // Les ajouts en un geste vont au repas en cours, donc à aujourd'hui : un autre jour ne propose que ce qui a une date.
+        val actions = if (state.isToday) AddAction.entries
+        else listOf(AddAction.NEW_MEAL, AddAction.IMPORT_FROM_AI, AddAction.CREATE_FOOD)
+        AddSheet(
+            actions = actions,
+            onDismiss = { showAddSheet = false },
+            onChoose = { action ->
+                showAddSheet = false
+                when (action) {
+                    AddAction.IMPORT_FROM_AI -> {
+                        onImportFromAi()
+                        scope.launch { listState.animateScrollToItem(0) }
+                    }
+                    AddAction.SCAN -> scanning = true
+                    AddAction.SEARCH -> searching = true
+                    AddAction.QUICK_ENTRY -> quickEntry = true
+                    AddAction.HISTORY -> history = true
+                    AddAction.SAVED_FOODS -> pickingSaved = true
+                    AddAction.CREATE_FOOD -> onCreateFood()
+                    AddAction.RECIPES -> pickingRecipe = true
+                    AddAction.NEW_MEAL -> onAddMeal(state.date)
+                }
+            },
+        )
+    }
     if (scanning) {
         ScanDialog(
             onFoodChosen = { food ->
-                viewModel.addScannedFood(food)
+                viewModel.addFood(food)
                 scanning = false
             },
             onDismiss = { scanning = false },
         )
     }
+    if (searching) {
+        FoodSearchDialog(
+            onFoodChosen = { food ->
+                viewModel.addFood(food)
+                searching = false
+            },
+            onDismiss = { searching = false },
+        )
+    }
+    if (quickEntry) {
+        CaloriesOnlyDialog(
+            onConfirm = { name, kcal ->
+                val error = viewModel.addCaloriesOnly(name, kcal)
+                if (error == null) quickEntry = false
+                error
+            },
+            onDismiss = { quickEntry = false },
+        )
+    }
+    if (history) {
+        FoodHistoryDialog(
+            onFoodChosen = { food ->
+                viewModel.addFood(food)
+                history = false
+            },
+            onDismiss = { history = false },
+        )
+    }
+    if (pickingSaved) {
+        SavedFoodPickerDialog(
+            foods = savedFoods.orEmpty(),
+            onPicked = { food ->
+                viewModel.addFood(food)
+                pickingSaved = false
+            },
+            onManage = {
+                pickingSaved = false
+                onOpenSavedFoods()
+            },
+            onDismiss = { pickingSaved = false },
+        )
+    }
+    if (pickingRecipe) {
+        RecipePickerDialog(
+            recipes = recipes.orEmpty(),
+            onPicked = { food ->
+                viewModel.addFood(food)
+                pickingRecipe = false
+            },
+            onManage = {
+                pickingRecipe = false
+                onOpenRecipes()
+            },
+            onDismiss = { pickingRecipe = false },
+        )
+    }
+    sharing?.let { meal ->
+        ShareMealDialog(
+            onShare = { portion ->
+                viewModel.shareMeal(meal, portion)
+                sharing = null
+            },
+            onDismiss = { sharing = null },
+        )
+    }
+}
+
+/** Écrit le repas à partager en fichier d'import et ouvre le partage Android (l'autre l'ouvre dans son app Healthy). */
+internal suspend fun shareMealFile(context: Context, json: String) {
+    val file = withContext(Dispatchers.IO) {
+        File(sharedCacheDir(context), "repas-healthy-${LocalDate.now()}.json").apply { writeText(json) }
+    }
+    shareFile(context, file, "text/plain", "Partager ce repas")
 }
 
 /** « au déjeuner », « à la collation » : où est allé l'aliment ajouté. */
@@ -267,7 +413,14 @@ internal fun addedToText(type: MealType): String = when (type) {
 }
 
 @Composable
-private fun MealCard(meal: Meal, onClick: () -> Unit, onToggleFavorite: () -> Unit) {
+private fun MealCard(
+    meal: Meal,
+    savedKeys: Set<String>,
+    onClick: () -> Unit,
+    onToggleFavorite: () -> Unit,
+    onToggleSaved: (Food) -> Unit,
+    onShare: () -> Unit,
+) {
     Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(
@@ -281,6 +434,9 @@ private fun MealCard(meal: Meal, onClick: () -> Unit, onToggleFavorite: () -> Un
                     modifier = Modifier.weight(1f),
                 )
                 Text(formatKcal(meal.totalKcal), style = MaterialTheme.typography.titleMedium)
+                IconButton(onClick = onShare, modifier = Modifier.size(40.dp)) {
+                    Icon(Icons.Rounded.Share, contentDescription = "Partager ce repas", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 // Favori : proposé ensuite dans « Mes favoris » à l'ajout d'un repas.
                 IconButton(onClick = onToggleFavorite, modifier = Modifier.size(40.dp)) {
                     Icon(
@@ -301,6 +457,7 @@ private fun MealCard(meal: Meal, onClick: () -> Unit, onToggleFavorite: () -> Un
                         Text("${food.name}$quantity", modifier = Modifier.weight(1f))
                         if (food.needsCheck()) ToCheckBadge()
                         Text(formatKcal(food.kcal))
+                        SavedFoodBookmark(saved = savedFoodKeyOf(food.name) in savedKeys, onClick = { onToggleSaved(food) })
                     }
                     food.assumptions?.let { AssumptionText(it) }
                 }
@@ -314,6 +471,20 @@ private fun MealCard(meal: Meal, onClick: () -> Unit, onToggleFavorite: () -> Un
         }
     }
 }
+
+/** Marque-page d'un aliment : plein s'il est dans « Mes aliments », un appui l'y ajoute ou l'en retire. */
+@Composable
+internal fun SavedFoodBookmark(saved: Boolean, onClick: () -> Unit) {
+    IconButton(onClick = onClick, modifier = Modifier.size(36.dp)) {
+        Icon(
+            if (saved) Icons.Rounded.Bookmark else Icons.Rounded.BookmarkBorder,
+            contentDescription = if (saved) "Retirer de mes aliments" else "Ajouter à mes aliments",
+            tint = if (saved) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+internal fun savedFoodKeyOf(name: String): String = savedKeyOf(name)
 
 /** Boissons caloriques en un geste (soda et jus comptent dans l'eau, bière et vin non). */
 @OptIn(ExperimentalLayoutApi::class)

@@ -1,6 +1,5 @@
 package com.bidaboss.healthy.meals.ui
 
-import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -14,7 +13,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -61,11 +63,13 @@ fun MealEditorScreen(
     initialDate: LocalDate,
     onClose: () -> Unit,
     onOpenRecipes: () -> Unit,
+    onOpenSavedFoods: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MealEditorViewModel = viewModel(
-        factory = healthyViewModelFactory { MealEditorViewModel(it.mealRepository, mealId, initialDate) },
+        factory = healthyViewModelFactory { MealEditorViewModel(it.mealRepository, mealId, initialDate, savedFoods = it.savedFoodRepository) },
     ),
     recipesViewModel: RecipesViewModel = viewModel(factory = healthyViewModelFactory { RecipesViewModel(it.recipeRepository) }),
+    savedFoodsViewModel: SavedFoodsViewModel = viewModel(factory = healthyViewModelFactory { SavedFoodsViewModel(it.savedFoodRepository) }),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val recipes by recipesViewModel.recipes.collectAsStateWithLifecycle()
@@ -74,22 +78,22 @@ fun MealEditorScreen(
     var showSearch by remember { mutableStateOf(false) }
     var showScan by remember { mutableStateOf(false) }
     var caloriesOnly by remember { mutableStateOf(false) }
+    var addingFood by remember { mutableStateOf(false) }
+    var pickingSaved by remember { mutableStateOf(false) }
+    var sharing by remember { mutableStateOf(false) }
+    val savedFoods by savedFoodsViewModel.foods.collectAsStateWithLifecycle()
+    val savedKeys by viewModel.savedKeys.collectAsStateWithLifecycle()
 
     LaunchedEffect(state.finished) {
         if (state.finished) onClose()
     }
 
-    // Partage Android du fichier d'import : un proche le colle dans « Importer » de son app.
+    // Partage Android du fichier d'import : un proche l'ouvre dans son app Healthy.
     val mealToShare by viewModel.mealToShare.collectAsStateWithLifecycle()
     val context = LocalContext.current
     LaunchedEffect(mealToShare) {
-        val text = mealToShare ?: return@LaunchedEffect
-        val send = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_SUBJECT, "Repas Healthy")
-            putExtra(Intent.EXTRA_TEXT, text)
-        }
-        context.startActivity(Intent.createChooser(send, "Partager ce repas"))
+        val json = mealToShare ?: return@LaunchedEffect
+        shareMealFile(context, json)
         viewModel.onMealShared()
     }
 
@@ -135,24 +139,12 @@ fun MealEditorScreen(
                 food = food,
                 onChange = viewModel::updateFood,
                 onRemove = { viewModel.removeFood(food.key) },
+                saved = savedKeyOf(food.name) in savedKeys,
+                onToggleSaved = { viewModel.toggleSaved(food) },
             )
         }
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { showSearch = true }, modifier = Modifier.weight(1f)) {
-                Text("Chercher un aliment")
-            }
-            Button(onClick = { showScan = true }, modifier = Modifier.weight(1f)) {
-                Text("Scanner")
-            }
-        }
-        OutlinedButton(onClick = { pickingRecipe = true }, modifier = Modifier.fillMaxWidth()) {
-            Text("Ajouter un de mes plats")
-        }
-        OutlinedButton(onClick = { caloriesOnly = true }, modifier = Modifier.fillMaxWidth()) {
-            Text("Juste les calories")
-        }
-        OutlinedButton(onClick = viewModel::addFood, modifier = Modifier.fillMaxWidth()) {
-            Text("Ajouter un aliment à la main")
+        Button(onClick = { addingFood = true }, modifier = Modifier.fillMaxWidth()) {
+            Text("+ Ajouter un aliment")
         }
 
         Text(
@@ -174,13 +166,66 @@ fun MealEditorScreen(
             OutlinedButton(onClick = viewModel::redo, enabled = !state.saving, modifier = Modifier.fillMaxWidth()) {
                 Text("Refaire ce repas aujourd'hui")
             }
-            OutlinedButton(onClick = viewModel::share, enabled = !state.saving, modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(onClick = { sharing = true }, enabled = !state.saving, modifier = Modifier.fillMaxWidth()) {
                 Text("Partager ce repas")
             }
             TextButton(onClick = { confirmDelete = true }, enabled = !state.saving) {
                 Text("Supprimer ce repas", color = MaterialTheme.colorScheme.error)
             }
         }
+    }
+
+    if (sharing) {
+        ShareMealDialog(
+            onShare = { portion ->
+                sharing = false
+                viewModel.share(portion)
+            },
+            onDismiss = { sharing = false },
+        )
+    }
+
+    if (addingFood) {
+        AlertDialog(
+            onDismissRequest = { addingFood = false },
+            title = { Text("Ajouter un aliment") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    listOf<Pair<String, () -> Unit>>(
+                        "Mes aliments" to { pickingSaved = true },
+                        "Scanner un code-barres" to { showScan = true },
+                        "Chercher un aliment" to { showSearch = true },
+                        "Saisie rapide (juste les calories)" to { caloriesOnly = true },
+                        "Mes plats" to { pickingRecipe = true },
+                        "Un aliment à la main" to { viewModel.addFood() },
+                    ).forEach { (label, action) ->
+                        TextButton(
+                            onClick = {
+                                addingFood = false
+                                action()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text(label, modifier = Modifier.fillMaxWidth()) }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { addingFood = false }) { Text("Fermer") } },
+        )
+    }
+
+    if (pickingSaved) {
+        SavedFoodPickerDialog(
+            foods = savedFoods.orEmpty(),
+            onPicked = { food ->
+                viewModel.addFoundFood(food)
+                pickingSaved = false
+            },
+            onManage = {
+                pickingSaved = false
+                onOpenSavedFoods()
+            },
+            onDismiss = { pickingSaved = false },
+        )
     }
 
     if (pickingRecipe) {
@@ -256,6 +301,9 @@ internal fun FoodCard(
     label: String = "Aliment",
     showPortions: Boolean = true,
     showKind: Boolean = true,
+    /** Marque-page « Mes aliments » : null = pas de marque-page (ingrédient d'un plat). */
+    saved: Boolean? = null,
+    onToggleSaved: () -> Unit = {},
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -267,13 +315,22 @@ internal fun FoodCard(
                     singleLine = true,
                     modifier = Modifier.weight(1f),
                 )
+                if (saved != null) SavedFoodBookmark(saved = saved, onClick = onToggleSaved)
                 IconButton(onClick = onRemove) {
                     Icon(Icons.Filled.Delete, contentDescription = "Retirer cet aliment")
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Changer la quantité recalcule les valeurs ; corriger une valeur à la main fixe la nouvelle base.
+            // Changer la quantité recalcule les valeurs ; corriger une valeur à la main fixe la nouvelle base.
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                FilledTonalIconButton(onClick = { onChange(food.stepped(-1)) }) {
+                    Icon(Icons.Filled.Remove, contentDescription = "Moins ${food.name.ifBlank { "cet aliment" }}")
+                }
                 NumberField("Quantité (g)", food.quantityG, { onChange(food.withQuantity(it)) }, Modifier.weight(1f))
+                FilledTonalIconButton(onClick = { onChange(food.stepped(1)) }) {
+                    Icon(Icons.Filled.Add, contentDescription = "Plus ${food.name.ifBlank { "cet aliment" }}")
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 NumberField("Calories (kcal)", food.kcal, { onChange(food.copy(kcal = it).rebased()) }, Modifier.weight(1f))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -391,7 +448,7 @@ private fun NumberField(label: String, value: String, onChange: (String) -> Unit
 
 /** « Juste les calories » : un nom (facultatif) et un nombre de calories, sans inventer d'aliments. */
 @Composable
-private fun CaloriesOnlyDialog(onConfirm: (name: String, kcal: String) -> String?, onDismiss: () -> Unit) {
+internal fun CaloriesOnlyDialog(onConfirm: (name: String, kcal: String) -> String?, onDismiss: () -> Unit) {
     var name by remember { mutableStateOf("") }
     var kcal by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }

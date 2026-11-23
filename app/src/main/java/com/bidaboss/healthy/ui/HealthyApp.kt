@@ -57,6 +57,7 @@ import com.bidaboss.healthy.settings.ui.SettingsSection
 import com.bidaboss.healthy.health.ui.HealthScreen
 import com.bidaboss.healthy.health.ui.HealthSection
 import com.bidaboss.healthy.today.ui.BadgesScreen
+import com.bidaboss.healthy.today.ui.ReferencesScreen
 import com.bidaboss.healthy.today.ui.TodayScreen
 import com.bidaboss.healthy.today.ui.WaterScreen
 import com.bidaboss.healthy.today.ui.WeeklyRecapScreen
@@ -104,6 +105,7 @@ internal object Routes {
     // ── LOT 1 : Aujourd'hui ──
     const val WATER = "water"
     const val WEEKLY_RECAP = "weekly_recap"
+    const val REFERENCES = "references"
 
     // ── LOT 2 : Repas ──
     const val MEAL_EDITOR = "meal_editor"
@@ -162,7 +164,7 @@ private val tabs = listOf(
 private fun tabRouteOf(route: String?): String? = when {
     route == null -> null
     // LOT 1 : Aujourd'hui
-    route == Routes.TODAY || route == Routes.WATER || route == Routes.WEEKLY_RECAP -> Routes.TODAY
+    route == Routes.TODAY || route == Routes.WATER || route == Routes.WEEKLY_RECAP || route == Routes.REFERENCES -> Routes.TODAY
     // LOT 2 : Repas
     route == Routes.MEALS || route == Routes.SCANNED_PRODUCTS || route == Routes.RECIPES || route == Routes.SAVED_FOODS ||
         route.startsWith(Routes.SAVED_FOOD_EDITOR) ||
@@ -263,6 +265,7 @@ private fun MainNavigation(
                     onOpenBadges = { navController.navigate(Routes.BADGES) { launchSingleTop = true } },
                     onOpenWeeklyRecap = { navController.navigate(Routes.WEEKLY_RECAP) { launchSingleTop = true } },
                     onOpenWatch = { navController.navigate(Routes.WATCH) { launchSingleTop = true } },
+                    onOpenReferences = { navController.navigate(Routes.REFERENCES) { launchSingleTop = true } },
                 )
             }
             // ── LOT 4 : Santé et Moi ──
@@ -281,6 +284,7 @@ private fun MainNavigation(
                 )
             }
             // ── LOT 1 : Aujourd'hui ──
+            composable(Routes.REFERENCES) { ReferencesScreen(onClose = { navController.popBackStack() }) }
             composable(Routes.WATER) { WaterScreen(onClose = { navController.popBackStack() }) }
             composable(Routes.BADGES) { BadgesScreen(onClose = { navController.popBackStack() }) }
             composable(Routes.WEEKLY_RECAP) { WeeklyRecapScreen(onClose = { navController.popBackStack() }) }
@@ -401,6 +405,7 @@ private fun MainNavigation(
                     onOpenProfile = { navController.navigate(Routes.PROFILE) { launchSingleTop = true } },
                     onOpenWeight = { navController.navigate(Routes.WEIGHT) { launchSingleTop = true } },
                     onOpenBadges = { navController.navigate(Routes.BADGES) { launchSingleTop = true } },
+                    onOpenReferences = { navController.navigate(Routes.REFERENCES) { launchSingleTop = true } },
                 )
             }
             composable(Routes.SETTINGS) {

@@ -122,6 +122,15 @@ dans les assets (`format/`) à chaque build, pour que l'app et le document ne di
   `Maintenance.maintenanceKcal` seulement : personne d'autre ne le recalcule.
 - Le profil est une seule ligne (`profile`, id = 1) ; une pesée par jour au plus (`weigh_ins`, date unique).
 
+## Repères nationaux
+
+La table des repères est une donnée de `:core` (`core/reference/References.kt`) : valeur, unité, source, adresse, date de lecture et
+statut (`ReferenceStatus` : vérifié, à confirmer, objectif de l'app). Elle ne change que par une nouvelle version de l'app. Le calcul de position
+(`ReferenceReports.build`) est du Kotlin pur, testé : il reçoit une liste de `RefDay` (une mesure absente est `null`, jamais zéro) et rend les lignes
+à afficher, sans zone pour les tendances. `today/data/ReferencesRepository` lit repas, eau, séances, profil et historique de la montre ;
+`ReferencesViewModel` sert l'écran `ReferencesScreen` et la carte d'Aujourd'hui. Pour renseigner une adresse de source ou passer un repère de « à confirmer » à « vérifié », on
+modifie seulement la table. Pas de migration, pas de réseau.
+
 ## Sauvegarde
 
 - `BackupWriter` et la lecture du type `backup` sont dans `:core` (`BackupTest`). `BackupRepository`

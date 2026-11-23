@@ -79,6 +79,7 @@ fun MeScreen(
     onOpenProfile: () -> Unit,
     onOpenWeight: () -> Unit,
     onOpenBadges: () -> Unit,
+    onOpenReferences: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MeViewModel = viewModel(
         factory = healthyViewModelFactory { MeViewModel(it.bodyRepository, it.maintenanceKcal, it.maintenanceInfo, it.meProgress) },
@@ -108,6 +109,7 @@ fun MeScreen(
                     }
                 }
                 ProfileCard(state, onOpenProfile)
+                ReferencesEntry(onOpenReferences)
                 // La proposition d'ajuster le maintien (avant la refonte sur Aujourd'hui) : visible seulement quand il y en a une.
                 MaintenanceCard(maintenance.info, onOpenDetail = onOpenProfile, onLater = maintenanceViewModel::later)
                 SectionLabel("MON POIDS")
@@ -342,4 +344,19 @@ private fun WeighInDialog(
         confirmButton = { TextButton(onClick = onSave) { Text("Enregistrer") } },
         dismissButton = { TextButton(onClick = onClose) { Text("Annuler") } },
     )
+}
+
+/** Entrée vers « Mes repères » depuis le profil (PRD repères nationaux : Aujourd'hui et Moi, pas de nouvel onglet). */
+@Composable
+private fun ReferencesEntry(onOpen: () -> Unit) {
+    Card(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp)) {
+            Text("Mes repères", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "Tes chiffres face aux recommandations, sur 7 ou 28 jours.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
 }

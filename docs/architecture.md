@@ -267,7 +267,7 @@ trajet : ensuite tout marche hors ligne.
 Services, gratuits et sans clé ni compte (deux hôtes, tous deux gérés par la communauté OpenStreetMap) :
 
 1. `nominatim.openstreetmap.org/search` : transforme chaque adresse en point GPS. Une requête par adresse, au plus une
-   par seconde (règle d'usage de Nominatim), `User-Agent` générique `Healthy-app` (jamais un nom, un e-mail ni un
+   par seconde (règle d'usage de Nominatim), `User-Agent` générique `Healthy-app/<version de l'app>` (jamais un nom, un e-mail ni un
    identifiant de l'utilisateur), `format=jsonv2`, `limit=1`, aucun détail demandé.
 2. `routing.openstreetmap.de/routed-bike/route/v1/driving/<lon,lat;…>` (OSRM, profil vélo) : renvoie la distance par la
    route (`overview=false`, rien d'autre). Une requête par trajet, qui n'envoie que les coordonnées des points.

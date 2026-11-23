@@ -58,8 +58,22 @@ Le propriétaire et ses proches (saisie manuelle : les repères sont indicatifs 
 | Charcuterie | 150 g par semaine au plus | SPF |
 | Boissons | eau seule boisson recommandée | SPF |
 
-**À confirmer (extraits vus, source non lue en entier : site ANSES bloquant)** : protéines 0,83 g/kg, fibres 25 à 30 g,
-lipides, glucides, sel en grammes. **Non trouvés** : durée de sommeil et pas par jour officiels.
+**Vérifiés, table EFSA des apports de référence, adultes (lue en entier, 2025)**
+| Repère | Valeur | Source |
+|---|---|---|
+| Protéines | 0,83 g/kg par jour (apport recommandé) ; 0,66 g/kg (besoin moyen) | EFSA |
+| Fibres | 25 g par jour (apport adéquat) | EFSA |
+| Glucides | 45 à 60 % de l'énergie | EFSA |
+| Lipides | 20 à 35 % de l'énergie | EFSA |
+| Eau | 2,5 L par jour (hommes), 2 L (femmes), boissons et eau des aliments compris | EFSA |
+| Sodium | 2 g par jour (environ 5 g de sel), apport sans danger et satisfaisant | EFSA |
+| Sucres ajoutés, graisses saturées, graisses trans | « aussi faibles que possible », sans chiffre | EFSA |
+| Énergie | besoins moyens par âge, sexe et niveau d'activité (NAP 1,4 à 2,0), à comparer au maintien de l'app | EFSA |
+| Vitamines et minéraux | valeurs complètes dans la table EFSA | EFSA |
+
+Précisions : l'objectif de fibres de l'app (30 g) et de protéines (1,6 g/kg) reste un **objectif de l'app**, affiché à côté du repère officiel (25 g, 0,83 g/kg), jamais à sa place. L'eau EFSA inclut celle des aliments : le repère est comparé à l'eau bue **avec une mention** qu'il est plus large.
+
+**Non trouvés** : durée de sommeil et pas par jour officiels (tendance affichée sans zone).
 
 ---
 
@@ -69,7 +83,7 @@ lipides, glucides, sel en grammes. **Non trouvés** : durée de sommeil et pas p
 - [ ] Accès par la carte d'Aujourd'hui et par Mon profil ; pas de nouvel onglet.
 - [ ] Sélecteur **7 jours / 28 jours** (28 par défaut).
 - [ ] Une ligne par repère mesurable avec les données de l'app (calories, protéines, fibres, eau, activité, sommeil, pas) : valeur de le propriétaire, barre avec la zone du repère, texte du repère.
-- [ ] Sous chaque ligne : **source** et **statut** (vérifié / à confirmer). Les repères de l'app sont étiquetés « Objectif de l'app », pas « officiel ».
+- [ ] Sous chaque ligne : **source** et **statut** (vérifié / à confirmer ; tous les repères de la table sont aujourd'hui vérifiés). Les repères de l'app sont étiquetés « Objectif de l'app », pas « officiel ».
 - [ ] Les repères sans chiffre officiel (sommeil, pas) montrent la tendance sans zone.
 - [ ] Les repères hebdomadaires (poisson, légumes secs, viande, charcuterie) ne sont affichés que si les repas portent l'information nécessaire ; sinon ils sont masqués, jamais à zéro.
 
@@ -131,5 +145,5 @@ Une PR : table `:core`, écran Repères, carte Aujourd'hui, entrée dans Mon pro
 ## Dépendances
 
 - Données de la montre (sommeil, pas) : déjà livrées, facultatives.
-- Confirmation à la source des valeurs ANSES : à faire par le propriétaire ou un fil dédié avant livraison, sinon elles restent « à confirmer ».
+- Source des valeurs : table EFSA des apports de référence (adultes), fournie par le propriétaire ; table à mettre à jour par version de l'app.
 - [Dev] consigne la règle dans `docs/decisions.md` à la livraison ; [Archi] relit la table.

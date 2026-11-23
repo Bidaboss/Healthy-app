@@ -77,7 +77,7 @@ fun ExerciseIllustration(exerciseName: String, modifier: Modifier = Modifier, wi
             val s = BODY_RADIUS / 38f
             translate(pose.center.x - 60f * s, pose.center.y - 72f * s) {
                 rotate(pose.angle, pivot = Offset(60f * s, 72f * s)) {
-                    scale(s, pivot = Offset.Zero) { drawPousse(Mood.HAPPY, theme, sparkle, shadow = false) }
+                    scale(s, pivot = Offset.Zero) { drawPousse(Mood.HAPPY, theme, sparkle, shadow = false, fullSize = true) }
                 }
             }
         }

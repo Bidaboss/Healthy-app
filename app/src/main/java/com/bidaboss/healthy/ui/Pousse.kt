@@ -5,16 +5,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.clipPath
-import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
@@ -24,27 +25,25 @@ import com.bidaboss.healthy.core.progress.Mood
 import com.bidaboss.healthy.settings.data.AppTheme
 import com.bidaboss.healthy.ui.theme.HealthyTheme
 
-private val Body = Color(0xFF7BD99A)
-private val LeafDark = Color(0xFF3BB273)
 internal val PousseInk = Color(0xFF17301F)
-private val Ink = PousseInk
-private val Cheek = Color(0xFFFF8A65)
-private val PirateRed = Color(0xFFC0392B)
-private val Straw = Color(0xFFE8C27A)
-private val StrawDark = Color(0xFFC99A4B)
-private val Leather = Color(0xFF8B5A2B)
 private val FlameCore = Color(0xFFFFC857)
-private val BonnetOrange = Color(0xFFF07B1D)
-private val BonnetDark = Color(0xFFC25E0E)
 
 /**
- * Pousse, la mascotte (maquette du fil Design), dessinée sur une grille de 120 × 120. Sa tenue suit
- * le thème : bandana et cache-œil en pirate, chapeau de paille et sac à dos en voyage, casque bulle
- * en espace, version pixelisée en arcade, bonnet et piolet en montagne.
+ * Pousse, la mascotte, en relief (refonte, lot 5) : dégradés pour le volume, reflet en haut à gauche,
+ * ombre au sol. Dessinée sur une grille de 120 × 120, portée du composant `Pousse` du prototype.
+ *
+ * 4 étapes selon [growth] (feuille, jeune pousse, arbuste avec tronc, arbre en fleur). Sa tenue suit
+ * le thème : bandana rouge et cache-œil en Pirate, chapeau de paille et sac à dos en Voyage, rien en
+ * Classique. Appel simple pour les autres écrans : `Pousse(growth = ..., size = ...)`.
  */
 @Composable
-fun Pousse(mood: Mood, modifier: Modifier = Modifier, size: Dp = 72.dp, growth: Growth = Growth.SPROUT) {
-    val theme = HealthyTheme.ambiance.theme
+fun Pousse(
+    mood: Mood = Mood.HAPPY,
+    modifier: Modifier = Modifier,
+    size: Dp = 72.dp,
+    growth: Growth = Growth.LEAF,
+    theme: AppTheme = HealthyTheme.ambiance.theme,
+) {
     val sparkle = HealthyTheme.ambiance.sparkle
     val label = pousseLabel(theme, mood, growth)
     Canvas(modifier.size(size).semantics { contentDescription = label }) {
@@ -52,252 +51,239 @@ fun Pousse(mood: Mood, modifier: Modifier = Modifier, size: Dp = 72.dp, growth: 
     }
 }
 
-/** Ce que dit le lecteur d'écran de Pousse, selon le thème, l'humeur et sa taille. */
+/** Ce que dit le lecteur d'écran de Pousse, selon le thème, l'humeur et l'étape. */
 internal fun pousseLabel(theme: AppTheme, mood: Mood, growth: Growth): String {
     val who = when (theme) {
-        AppTheme.CLASSIC -> "Pousse"
         AppTheme.PIRATE -> "Capitaine Pousse"
         AppTheme.TRAVEL -> "Pousse en voyage"
-        AppTheme.SPACE -> "Pousse astronaute"
-        AppTheme.ARCADE -> "Pousse en pixels"
-        AppTheme.MOUNTAIN -> "Pousse en montagne"
+        else -> "Pousse"
     }
-    return when (mood) {
-        Mood.HAPPY -> "$who, contente"
-        Mood.ENCOURAGING -> "$who t'encourage"
-        Mood.PROUD -> "$who, fière de toi"
-    } + if (growth != Growth.SPROUT) ", ${growth.label}" else ""
+    val feeling = when (mood) {
+        Mood.HAPPY -> "contente"
+        Mood.ENCOURAGING -> "t'encourage"
+        Mood.PROUD -> "fière de toi"
+    }
+    return "$who, $feeling, ${growth.label}"
 }
 
-/** Pousse sur la grille 120 × 120 ; [shadow] = false pour les illustrations d'exercices (ombre dessinée à part). */
+// Les chemins sont lus du texte SVG du prototype, tels quels : un seul endroit à comparer.
+private fun svg(d: String): Path = PathParser().parsePathString(d).toPath()
+
+private val leafPath by lazy { svg("M0 0 C-13 -8 -15 -27 0 -44 C15 -27 13 -8 0 0 Z") }
+private val leafBodyOutline by lazy { svg("M60 28 C92 48 98 82 60 110 C22 82 28 48 60 28 Z") }
+private val leafBody by lazy { svg("M60 31 C89 49 94 81 60 107 C26 81 31 49 60 31 Z") }
+private val trunk by lazy { svg("M44 106 C41 90 43 70 45 54 C52 50 68 50 75 54 C77 70 79 90 76 106 Z") }
+private val trunkRoots by lazy { svg("M36 112 C42 108 46 106 48 100 L72 100 C74 106 78 108 84 112 Z") }
+private val soil by lazy { svg("M26 112 Q60 100 94 112 Z") }
+private val bandana by lazy { svg("M27 62 Q60 26 93 62 L93 52 Q60 14 27 52 Z") }
+private val bandanaKnot by lazy { svg("M93 54 L106 44 L104 60 Z") }
+private val strawCrown by lazy { svg("M38 52 Q60 22 82 52 Z") }
+
+private fun c(hex: Long) = Color(hex or 0xFF000000)
+
+/** Dégradé radial en pourcentages du cadre de [box] (comme `objectBoundingBox` en SVG). */
+private fun radial(box: androidx.compose.ui.geometry.Rect, cx: Float, cy: Float, r: Float, vararg stops: Pair<Float, Color>) =
+    Brush.radialGradient(
+        colorStops = stops,
+        center = Offset(box.left + box.width * cx, box.top + box.height * cy),
+        radius = r * maxOf(box.width, box.height),
+    )
+
+private fun linear(
+    box: androidx.compose.ui.geometry.Rect, x1: Float, y1: Float, x2: Float, y2: Float, vararg stops: Pair<Float, Color>,
+) = Brush.linearGradient(
+    colorStops = stops,
+    start = Offset(box.left + box.width * x1, box.top + box.height * y1),
+    end = Offset(box.left + box.width * x2, box.top + box.height * y2),
+)
+
+private class Paints {
+    val leafBox = leafPath.getBounds()
+    val leafA = linear(leafBox, 0f, 0f, 1f, 1f, 0f to c(0x8CE3A8), 1f to c(0x2A9158))
+    val leafB = linear(leafBox, 1f, 0f, 0f, 1f, 0f to c(0xBDF2CA), 1f to c(0x3DAA6C))
+    val body = leafBody.getBounds().let {
+        radial(it, 0.34f, 0.28f, 0.85f, 0f to c(0xE4FFEA), 0.3f to c(0x9CE8B4), 0.75f to c(0x4FBF7C), 1f to c(0x2A8A55))
+    }
+    val trunkBrush = trunk.getBounds().let { linear(it, 0f, 0f, 1f, 0f, 0f to c(0xC79561), 0.35f to c(0xA9743F), 1f to c(0x6E4524)) }
+    val rootsBrush = trunkRoots.getBounds().let { linear(it, 0f, 0f, 1f, 0f, 0f to c(0xC79561), 0.35f to c(0xA9743F), 1f to c(0x6E4524)) }
+    val bandanaBrush = bandana.getBounds().let { linear(it, 0f, 0f, 0f, 1f, 0f to c(0xE5584A), 1f to c(0xA12D22)) }
+    val knotBrush = bandanaKnot.getBounds().let { linear(it, 0f, 0f, 0f, 1f, 0f to c(0xE5584A), 1f to c(0xA12D22)) }
+    val hatBrush = Brush.verticalGradient(0f to c(0xF8E2A6), 1f to c(0xD9AE55), startY = 14f, endY = 52f)
+    val brimBrush = Brush.verticalGradient(0f to c(0xF8E2A6), 1f to c(0xD9AE55), startY = 45f, endY = 61f)
+    val bagBrush = radial(androidx.compose.ui.geometry.Rect(80f, 68f, 98f, 100f), 0.35f, 0.3f, 0.8f, 0f to c(0xC4894A), 1f to c(0x7A4A1E))
+    val flower = radial(androidx.compose.ui.geometry.Rect(-13.2f, -15f, 13.2f, 14f), 0.4f, 0.35f, 0.7f, 0f to c(0xFFC1A8), 1f to c(0xF0603C))
+    val fruit = radial(androidx.compose.ui.geometry.Rect(35.6f, 51.6f, 44.4f, 60.4f), 0.35f, 0.3f, 0.75f, 0f to c(0xFF9A8A), 1f to c(0xC73A2E))
+}
+
+private val paints by lazy { Paints() }
+
+/**
+ * Pousse sur la grille 120 × 120 ; [shadow] = false pour les illustrations d'exercices (ombre dessinée à part),
+ * qui demandent aussi [fullSize] (pas de réduction selon l'étape).
+ */
 internal fun DrawScope.drawPousse(
     mood: Mood,
     theme: AppTheme,
     sparkle: Color,
     shadow: Boolean = true,
-    growth: Growth = Growth.SPROUT,
+    growth: Growth = Growth.LEAF,
+    fullSize: Boolean = false,
 ) {
-    if (theme == AppTheme.ARCADE) {
-        if (shadow) drawOval(Color.Black.copy(alpha = 0.15f), topLeft = Offset(32f, 107f), size = Size(56f, 10f))
-        pixelPousse(mood)
-        return
+    val p = paints
+    val hasTrunk = growth >= Growth.SHRUB
+    // fullSize : les illustrations d'exercices (membres dessinés autour) veulent le corps à pleine taille.
+    val s = if (fullSize) 1f else when (growth) {
+        Growth.LEAF -> 0.52f
+        Growth.SPROUT -> 0.7f
+        Growth.SHRUB -> 0.88f
+        Growth.TREE -> 0.8f
     }
-    if (shadow) drawOval(Color.Black.copy(alpha = 0.15f), topLeft = Offset(32f, 107f), size = Size(56f, 10f))
-    // En voyage, montagne et espace, les feuilles sortent du chapeau, du bonnet ou du casque :
-    // on les dessine après eux.
-    val leavesOnTop = theme == AppTheme.TRAVEL || theme == AppTheme.MOUNTAIN || theme == AppTheme.SPACE
-    if (!leavesOnTop) leaves(mood, growth)
-    if (theme == AppTheme.TRAVEL) {
-        // Sac à dos porté de trois quarts : il dépasse à droite du corps.
-        drawRoundRect(Leather, topLeft = Offset(70f, 56f), size = Size(40f, 48f), cornerRadius = CornerRadius(12f))
-        drawRoundRect(StrawDark, topLeft = Offset(98f, 70f), size = Size(12f, 18f), cornerRadius = CornerRadius(4f))
-    }
-    drawCircle(Color.White, radius = 38f, center = Offset(60f, 72f))
-    drawCircle(Body, radius = 34f, center = Offset(60f, 74f))
-    drawOval(Color.White.copy(alpha = 0.45f), topLeft = Offset(38f, 50f), size = Size(20f, 12f))
-    drawCircle(Cheek.copy(alpha = 0.85f), radius = 5f, center = Offset(39f, 82f))
-    drawCircle(Cheek.copy(alpha = 0.85f), radius = 5f, center = Offset(81f, 82f))
-
-    val line = Stroke(width = 4f, cap = StrokeCap.Round)
-    when (mood) {
-        Mood.HAPPY -> {
-            eye(47f)
-            eye(73f)
-            drawPath(Path().apply { moveTo(50f, 84f); quadraticTo(60f, 94f, 70f, 84f) }, Ink, style = line)
-        }
-        Mood.ENCOURAGING -> {
-            eye(47f)
-            drawLine(Ink, Offset(68f, 70f), Offset(78f, 70f), strokeWidth = 4f, cap = StrokeCap.Round)
-            drawPath(Path().apply { moveTo(52f, 85f); quadraticTo(60f, 90f, 68f, 85f) }, Ink, style = line)
-            drawLine(Cheek, Offset(96f, 60f), Offset(106f, 50f), strokeWidth = 4f, cap = StrokeCap.Round)
-            drawLine(Cheek, Offset(100f, 72f), Offset(112f, 68f), strokeWidth = 4f, cap = StrokeCap.Round)
-        }
-        Mood.PROUD -> {
-            drawPath(Path().apply { moveTo(41f, 70f); quadraticTo(47f, 64f, 53f, 70f) }, Ink, style = line)
-            drawPath(Path().apply { moveTo(67f, 70f); quadraticTo(73f, 64f, 79f, 70f) }, Ink, style = line)
-            drawPath(Path().apply { moveTo(48f, 82f); quadraticTo(60f, 100f, 72f, 82f); close() }, Ink)
-            listOf(Offset(14f, 30f) to Offset(18f, 40f), Offset(106f, 30f) to Offset(102f, 40f), Offset(20f, 14f) to Offset(26f, 22f))
-                .forEach { (a, b) -> drawLine(sparkle, a, b, strokeWidth = 4f, cap = StrokeCap.Round) }
-        }
-    }
-    when (theme) {
-        AppTheme.CLASSIC -> Unit
-        AppTheme.PIRATE -> pirateOutfit()
-        AppTheme.TRAVEL -> {
-            travelOutfit()
-            leaves(mood, growth)
-        }
-        AppTheme.SPACE -> {
-            spaceHelmet()
-            leaves(mood, growth)
-        }
-        AppTheme.MOUNTAIN -> {
-            mountainOutfit()
-            leaves(mood, growth)
-        }
-        AppTheme.ARCADE -> Unit
-    }
-}
-
-/** Casque bulle transparent, col gris en bas ; les feuilles dépassent par le haut. */
-private fun DrawScope.spaceHelmet() {
-    val center = Offset(60f, 72f)
-    drawCircle(Color.White.copy(alpha = 0.16f), radius = 46f, center = center)
-    drawCircle(Color(0xFFBFE9F0), radius = 46f, center = center, style = Stroke(width = 3f))
-    // Reflet sur le haut gauche de la bulle.
-    drawPath(
-        Path().apply { moveTo(26f, 62f); quadraticTo(30f, 38f, 52f, 30f) },
-        Color.White.copy(alpha = 0.8f),
-        style = Stroke(width = 4f, cap = StrokeCap.Round),
-    )
-    drawRoundRect(Color(0xFFB8BCC8), topLeft = Offset(30f, 104f), size = Size(60f, 10f), cornerRadius = CornerRadius(5f))
-    drawRoundRect(Color(0xFF6C4AB6), topLeft = Offset(54f, 105f), size = Size(12f, 8f), cornerRadius = CornerRadius(2f))
-}
-
-/** Bonnet orange balisage à côtes, et piolet tenu sur la droite. */
-private fun DrawScope.mountainOutfit() {
-    // Piolet : manche en bois, tête métallique.
-    drawLine(Color(0xFF8B5A2B), Offset(100f, 110f), Offset(110f, 56f), strokeWidth = 4f, cap = StrokeCap.Round)
-    drawLine(Color(0xFF8A8F98), Offset(98f, 58f), Offset(120f, 54f), strokeWidth = 5f, cap = StrokeCap.Round)
-    drawPath(Path().apply { moveTo(98f, 58f); quadraticTo(94f, 62f, 96f, 68f) }, Color(0xFF8A8F98), style = Stroke(width = 4f, cap = StrokeCap.Round))
-    val head = Path().apply { addOval(Rect(Offset(60f, 74f), 34f)) }
-    clipPath(head) {
-        drawRect(BonnetOrange, topLeft = Offset(20f, 36f), size = Size(80f, 22f))
-        listOf(38f, 48f, 60f, 72f, 82f).forEach { x ->
-            drawLine(BonnetDark, Offset(x, 40f), Offset(x, 56f), strokeWidth = 2f)
-        }
-    }
-    drawRoundRect(BonnetDark, topLeft = Offset(26f, 54f), size = Size(68f, 8f), cornerRadius = CornerRadius(4f))
-}
-
-/**
- * Pousse en pixel art pour le thème Arcade rétro : la même silhouette (corps rond, deux feuilles,
- * joues), redessinée sur une grille de 16 × 16 cases. Ce n'est la reprise d'aucun personnage existant.
- */
-private fun DrawScope.pixelPousse(mood: Mood) {
-    val rows = PixelPousse.toMutableList()
-    when (mood) {
-        Mood.HAPPY -> Unit
-        // Clin d'œil : l'œil droit devient un trait.
-        Mood.ENCOURAGING -> {
-            rows[8] = rows[8].replaceRange(10, 11, "G")
-            rows[9] = rows[9].replaceRange(9, 12, "KKK")
-        }
-        // Fière : yeux plissés en ^ ^ et grande bouche ouverte en U sur deux rangées.
-        Mood.PROUD -> {
-            rows[9] = ".WGGKGKGGKGKGGW."
-            rows[11] = ".WGCGKKKKKKGCGW."
-            rows[12] = ".WGGGGKKKKGGGGW."
-        }
-    }
-    val cell = 120f / 16f
-    rows.forEachIndexed { y, row ->
-        row.forEachIndexed { x, c ->
-            val color = when (c) {
-                'G' -> Body
-                'D' -> LeafDark
-                'L' -> Body
-                'K' -> Ink
-                'W' -> Color.White
-                'C' -> Cheek
-                else -> null
+    withTransform({ translate(60f - 60f * s, 112f - 112f * s); scale(s, s, pivot = Offset.Zero) }) {
+        if (shadow) {
+            // Ombre au sol, puis petit tas de terre et brins d'herbe.
+            withTransform({ scale(1f, 7f / 34f, pivot = Offset(60f, 112f)) }) {
+                drawCircle(
+                    Brush.radialGradient(0f to Color.Black.copy(alpha = 0.42f), 1f to Color.Transparent, center = Offset(60f, 112f), radius = 34f),
+                    radius = 34f,
+                    center = Offset(60f, 112f),
+                )
             }
-            if (color != null) drawRect(color, topLeft = Offset(x * cell, y * cell + 2f), size = Size(cell + 0.5f, cell + 0.5f))
+            drawPath(soil, c(0x6B4A2B), alpha = 0.92f)
+            drawPath(svg("M31 112 Q60 103 89 112"), c(0x8A6238), alpha = 0.7f, style = Stroke(width = 2f))
+            drawPath(svg("M20 112 L22 104 L26 112 M96 112 L99 103 L102 112"), c(0x3FA66B), style = Stroke(width = 2.4f, cap = StrokeCap.Round))
         }
-    }
-}
-
-private val PixelPousse = listOf(
-    "................",
-    ".DDD.......LLL..",
-    "..DDDD...LLLL...",
-    "...DDDD.LLLL....",
-    ".....DDLL.......",
-    ".....WWWWWW.....",
-    "...WWGGGGGGWW...",
-    "..WGGGGGGGGGGW..",
-    "..WGGKGGGGKGGW..",
-    ".WGGGKGGGGKGGGW.",
-    ".WGCGGGGGGGGCGW.",
-    ".WGCGGKGGKGGCGW.",
-    ".WGGGGGKKGGGGGW.",
-    "..WGGGGGGGGGGW..",
-    "...WWGGGGGGWW...",
-    ".....WWWWWW.....",
-)
-
-/** Feuilles : plus grandes quand elle est fière ; tige, feuilles en plus et fleur selon le palier. */
-private fun DrawScope.leaves(mood: Mood, growth: Growth) {
-    if (growth >= Growth.PLANT) {
-        // Tige qui sort du haut de la tête, avec deux feuilles basses de chaque côté.
-        val top = if (growth == Growth.SHRUB) 6f else 10f
-        drawLine(LeafDark, Offset(60f, 36f), Offset(60f, top), strokeWidth = 4f, cap = StrokeCap.Round)
-        drawPath(leaf(60f, 26f, 54f, 20f, 44f, 18f, 34f, 22f, 40f, 30f, 52f, 30f), Body)
-        drawPath(leaf(60f, 22f, 66f, 16f, 76f, 14f, 86f, 18f, 80f, 26f, 68f, 26f), LeafDark)
-        if (growth == Growth.SHRUB) {
-            drawPath(leaf(60f, 14f, 54f, 8f, 46f, 6f, 38f, 10f, 42f, 16f, 52f, 16f), LeafDark)
-            drawPath(leaf(60f, 10f, 66f, 4f, 74f, 2f, 82f, 6f, 78f, 12f, 68f, 12f), Body)
-            // Petite fleur au sommet.
-            listOf(Offset(56f, 6f), Offset(64f, 6f), Offset(60f, 2f), Offset(60f, 10f))
-                .forEach { drawCircle(Cheek, radius = 3.2f, center = it) }
-            drawCircle(FlameCore, radius = 2.6f, center = Offset(60f, 6f))
-        } else {
-            drawCircle(Cheek, radius = 3.5f, center = Offset(60f, top))
+        if (theme == AppTheme.TRAVEL) drawBackpack(p)
+        if (hasTrunk) drawTree(p, growth) else drawLeafBody(p, growth)
+        withTransform({ if (hasTrunk) scale(0.78f, 0.78f, pivot = Offset(60f, 78f)) }) { drawFace(mood) }
+        withTransform({ scale(if (hasTrunk) 0.72f else 0.8f, 1f, pivot = Offset(60f, 0f)) }) {
+            when (theme) {
+                AppTheme.PIRATE -> drawPirate(p)
+                AppTheme.TRAVEL -> drawStrawHat(p)
+                else -> Unit
+            }
         }
-    }
-    if (growth >= Growth.LEAVES) {
-        // Deux petites feuilles en plus, plus bas sur les côtés.
-        drawPath(leaf(56f, 38f, 50f, 34f, 40f, 32f, 30f, 36f, 36f, 42f, 48f, 41f), Body)
-        drawPath(leaf(64f, 38f, 70f, 34f, 80f, 32f, 90f, 36f, 84f, 42f, 72f, 41f), LeafDark)
     }
     if (mood == Mood.PROUD) {
-        drawPath(leaf(60f, 34f, 56f, 16f, 44f, 6f, 28f, 4f, 30f, 24f, 42f, 33f), LeafDark)
-        drawPath(leaf(60f, 34f, 64f, 14f, 78f, 4f, 96f, 4f, 92f, 26f, 78f, 34f), Body)
+        listOf(Offset(14f, 30f) to Offset(18f, 40f), Offset(106f, 30f) to Offset(102f, 40f), Offset(20f, 14f) to Offset(26f, 22f))
+            .forEach { (a, b) -> drawLine(sparkle, a, b, strokeWidth = 4f, cap = StrokeCap.Round) }
+    }
+}
+
+private fun DrawScope.leaf(p: Paints, x: Float, y: Float, angle: Float, size: Float, second: Boolean) {
+    withTransform({ translate(x, y); rotate(angle, pivot = Offset.Zero); scale(size, size, pivot = Offset.Zero) }) {
+        drawPath(leafPath, if (second) p.leafB else p.leafA)
+    }
+}
+
+private fun DrawScope.flower(p: Paints, x: Float, y: Float, size: Float) {
+    withTransform({ translate(x, y); scale(size, size, pivot = Offset.Zero) }) {
+        listOf(0f to (0f to -8f), 72f to (8f to -3f), 144f to (5f to 7f), 216f to (-5f to 7f), 288f to (-8f to -3f)).forEach { (deg, at) ->
+            rotate(deg, pivot = Offset(at.first, at.second)) {
+                drawOval(p.flower, topLeft = Offset(at.first - 5.2f, at.second - 7f), size = Size(10.4f, 14f))
+            }
+        }
+        drawCircle(c(0xFFD25C), radius = 4.6f)
+        drawCircle(c(0xFFF3C4), radius = 1.6f, center = Offset(-1.4f, -1.4f))
+    }
+}
+
+/** Étapes 1 et 2 : le corps est une feuille ; la jeune pousse a deux petites feuilles dans le dos. */
+private fun DrawScope.drawLeafBody(p: Paints, growth: Growth) {
+    if (growth == Growth.SPROUT) {
+        leaf(p, 60f, 36f, -34f, 0.62f, false)
+        leaf(p, 60f, 36f, 34f, 0.62f, true)
+    }
+    drawPath(leafBodyOutline, Color.White, alpha = 0.9f)
+    drawPath(leafBody, p.body)
+    val vein = c(0x1F6B42)
+    drawPath(svg("M60 104 C60 84 60 60 60 38"), vein, alpha = 0.25f, style = Stroke(width = 2f, cap = StrokeCap.Round))
+    drawPath(svg("M60 92 L46 82 M60 80 L74 70 M60 70 L48 62"), vein, alpha = 0.18f, style = Stroke(width = 1.6f, cap = StrokeCap.Round))
+    rotate(-30f, pivot = Offset(45f, 54f)) {
+        drawOval(Color.White, topLeft = Offset(36f, 48.5f), size = Size(18f, 11f), alpha = 0.55f)
+    }
+    drawLine(c(0x2A8A55), Offset(60f, 110f), Offset(60f, 116f), strokeWidth = 3.2f, cap = StrokeCap.Round)
+}
+
+/** Étapes 3 et 4 : tronc et couronne de feuilles ; l'arbre en fleur a trois fleurs et deux fruits. */
+private fun DrawScope.drawTree(p: Paints, growth: Growth) {
+    if (growth == Growth.SHRUB) {
+        leaf(p, 60f, 56f, -78f, 0.95f, false); leaf(p, 60f, 56f, 78f, 0.95f, true)
+        leaf(p, 60f, 56f, -48f, 1.1f, true); leaf(p, 60f, 56f, 48f, 1.1f, false)
+        leaf(p, 60f, 56f, -18f, 1.15f, false); leaf(p, 60f, 56f, 18f, 1.15f, true)
     } else {
-        drawPath(leaf(60f, 34f, 58f, 22f, 50f, 14f, 38f, 12f, 40f, 26f, 48f, 33f), LeafDark)
-        drawPath(leaf(60f, 34f, 62f, 20f, 72f, 12f, 86f, 12f, 84f, 28f, 74f, 34f), Body)
+        leaf(p, 60f, 56f, -96f, 0.95f, false); leaf(p, 60f, 56f, 96f, 0.95f, true)
+        leaf(p, 60f, 56f, -70f, 1.15f, true); leaf(p, 60f, 56f, 70f, 1.15f, false)
+        leaf(p, 60f, 56f, -44f, 1.3f, false); leaf(p, 60f, 56f, 44f, 1.3f, true)
+        leaf(p, 60f, 56f, -18f, 1.4f, true); leaf(p, 60f, 56f, 18f, 1.4f, false)
+        leaf(p, 60f, 56f, 0f, 1.45f, false)
+        flower(p, 60f, 4f, 0.95f); flower(p, 27f, 24f, 0.7f); flower(p, 93f, 24f, 0.7f)
+        drawCircle(p.fruit, radius = 4.4f, center = Offset(40f, 56f))
+        drawCircle(p.fruit, radius = 4.4f, center = Offset(80f, 54f))
+    }
+    drawPath(trunkRoots, p.rootsBrush)
+    drawPath(trunk, p.trunkBrush)
+    drawPath(trunk, Color.White, alpha = 0.5f, style = Stroke(width = 2f))
+    drawPath(svg("M52 60 C51 72 52 84 51 98 M66 58 C68 70 67 84 69 98"), c(0x4B2C14), alpha = 0.25f, style = Stroke(width = 1.6f, cap = StrokeCap.Round))
+    drawOval(Color.White, topLeft = Offset(46.6f, 54f), size = Size(6.8f, 16f), alpha = 0.28f)
+    drawOval(c(0x8B5A2E), topLeft = Offset(44.5f, 50.2f), size = Size(31f, 7.6f))
+    drawOval(c(0xD2A06A), topLeft = Offset(48f, 50.9f), size = Size(24f, 5.2f), alpha = 0.7f)
+}
+
+private fun DrawScope.drawFace(mood: Mood) {
+    val ink = PousseInk
+    val line = Stroke(width = 4f, cap = StrokeCap.Round)
+    fun eye(x: Float) {
+        drawCircle(ink, radius = 5.4f, center = Offset(x, 72f))
+        drawCircle(Color.White, radius = 1.8f, center = Offset(x + 2f, 70f))
+    }
+    val cheek = Brush.radialGradient(0f to c(0xFF8A65).copy(alpha = 0.85f), 1f to c(0xFF8A65).copy(alpha = 0f), center = Offset(39f, 84f), radius = 7f)
+    drawCircle(cheek, radius = 7f, center = Offset(39f, 84f))
+    withTransform({ translate(42f, 0f) }) { drawCircle(cheek, radius = 7f, center = Offset(39f, 84f)) }
+    when (mood) {
+        Mood.HAPPY -> {
+            eye(47f); eye(73f)
+            drawCircle(Color.White, radius = 1f, center = Offset(46f, 75f), alpha = 0.7f)
+            drawPath(svg("M50 85 Q60 95 70 85"), ink, style = line)
+        }
+        Mood.ENCOURAGING -> {
+            eye(47f)
+            drawLine(ink, Offset(68f, 72f), Offset(78f, 72f), strokeWidth = 4f, cap = StrokeCap.Round)
+            drawPath(svg("M52 86 Q60 91 68 86"), ink, style = line)
+        }
+        Mood.PROUD -> {
+            drawPath(svg("M41 72 Q47 66 53 72"), ink, style = line)
+            drawPath(svg("M67 72 Q73 66 79 72"), ink, style = line)
+            drawPath(svg("M48 83 Q60 101 72 83 Z"), ink)
+        }
     }
 }
 
-/** Bandana rouge à pois sur le haut de la tête, nœud à gauche, cache-œil sur l'œil droit (comme l'icône). */
-private fun DrawScope.pirateOutfit() {
-    val head = Path().apply { addOval(Rect(Offset(60f, 74f), 34f)) }
-    clipPath(head) {
-        drawRect(PirateRed, topLeft = Offset(20f, 30f), size = Size(80f, 26f))
-        listOf(Offset(44f, 47f), Offset(60f, 44f), Offset(76f, 47f), Offset(52f, 52f), Offset(68f, 52f))
-            .forEach { drawCircle(Color.White, radius = 2.2f, center = it) }
+/** Bandana rouge à pois, nœud à droite, cache-œil sur l'œil droit (comme l'icône). */
+private fun DrawScope.drawPirate(p: Paints) {
+    drawPath(bandana, p.bandanaBrush)
+    drawPath(svg("M27 62 Q60 28 93 62"), c(0xFFB4A8), alpha = 0.5f, style = Stroke(width = 1.4f))
+    drawPath(bandanaKnot, p.knotBrush)
+    listOf(Offset(46f, 44f), Offset(60f, 38f), Offset(74f, 44f)).forEach { drawCircle(Color.White, radius = 2f, center = it, alpha = 0.9f) }
+    drawLine(PousseInk, Offset(34f, 63f), Offset(86f, 83f), strokeWidth = 2.6f)
+    drawCircle(PousseInk, radius = 9f, center = Offset(73f, 73f))
+    drawOval(Color.White, topLeft = Offset(67f, 68f), size = Size(6f, 4f), alpha = 0.3f)
+}
+
+/** Chapeau de paille à ruban bleu. */
+private fun DrawScope.drawStrawHat(p: Paints) {
+    drawPath(strawCrown, p.hatBrush)
+    drawRoundRect(c(0x1C6E8C), topLeft = Offset(38f, 47f), size = Size(44f, 6f), cornerRadius = androidx.compose.ui.geometry.CornerRadius(3f))
+    drawOval(p.brimBrush, topLeft = Offset(15f, 45f), size = Size(90f, 16f))
+    drawPath(svg("M22 53 Q60 45 98 53"), c(0xB8903F), alpha = 0.7f, style = Stroke(width = 2f))
+    rotate(-20f, pivot = Offset(44f, 40f)) {
+        drawOval(Color.White, topLeft = Offset(36f, 37f), size = Size(16f, 6f), alpha = 0.35f)
     }
-    drawPath(Path().apply { moveTo(28f, 54f); lineTo(14f, 48f); lineTo(16f, 62f); close() }, PirateRed)
-    drawPath(Path().apply { moveTo(28f, 56f); lineTo(18f, 68f); lineTo(28f, 68f); close() }, PirateRed)
-    drawLine(Ink, Offset(52f, 56f), Offset(93f, 80f), strokeWidth = 2.5f, cap = StrokeCap.Round)
-    drawCircle(Ink, radius = 8f, center = Offset(73f, 70f))
 }
 
-/** Chapeau de paille posé sur la tête et bretelle du sac à dos. */
-private fun DrawScope.travelOutfit() {
-    // Une seule bretelle, fine, du côté du sac.
-    drawPath(Path().apply { moveTo(84f, 58f); quadraticTo(90f, 78f, 86f, 100f) }, Leather, style = Stroke(width = 3f, cap = StrokeCap.Round))
-    drawOval(Straw, topLeft = Offset(20f, 40f), size = Size(80f, 14f))
-    drawRoundRect(Straw, topLeft = Offset(40f, 26f), size = Size(40f, 22f), cornerRadius = CornerRadius(10f))
-    drawRect(Color(0xFF1C6E8C), topLeft = Offset(40f, 38f), size = Size(40f, 6f))
-    drawOval(StrawDark, topLeft = Offset(20f, 40f), size = Size(80f, 14f), style = Stroke(width = 2f))
-}
-
-private fun DrawScope.eye(x: Float) {
-    drawCircle(Ink, radius = 5f, center = Offset(x, 70f))
-    drawCircle(Color.White, radius = 1.6f, center = Offset(x + 2f, 68f))
-}
-
-/** Feuille : deux courbes de Bézier du point de départ vers la pointe et retour. */
-private fun leaf(
-    x0: Float, y0: Float,
-    c1x: Float, c1y: Float, c2x: Float, c2y: Float, tipX: Float, tipY: Float,
-    c3x: Float, c3y: Float, c4x: Float, c4y: Float,
-) = Path().apply {
-    moveTo(x0, y0)
-    cubicTo(c1x, c1y, c2x, c2y, tipX, tipY)
-    cubicTo(c3x, c3y, c4x, c4y, x0, y0)
-    close()
+/** Sac à dos de voyage, dépasse derrière le corps à droite. */
+private fun DrawScope.drawBackpack(p: Paints) {
+    drawRoundRect(p.bagBrush, topLeft = Offset(80f, 68f), size = Size(18f, 32f), cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f))
+    drawPath(svg("M83 74 Q89 70 95 74"), c(0xE8C08A), alpha = 0.8f, style = Stroke(width = 2f, cap = StrokeCap.Round))
 }
 
 /** Petite flamme de la série de semaines actives. */

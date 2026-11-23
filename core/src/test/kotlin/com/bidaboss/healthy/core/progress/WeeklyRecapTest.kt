@@ -59,7 +59,7 @@ class WeeklyRecapTest {
         assertEquals(1, recap.fiberDays)
         assertEquals(1, recap.waterDays)
         assertEquals(2, recap.streakWeeks)
-        assertEquals(Growth.LEAVES, recap.growth)
+        assertEquals(Growth.SPROUT, recap.growth)
         // Gagnés cette semaine : premier repas, première séance, 2 semaines actives ; le plus avancé est montré.
         assertEquals(Badge.TWO_WEEKS, recap.badge)
         assertTrue(recap.badgeIsNew)

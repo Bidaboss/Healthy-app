@@ -43,7 +43,7 @@ data class TodaySnapshot(
     /** Couleur de l'anneau, même règle qu'Aujourd'hui : neutre (null) sauf dépassement net. */
     val band: Band? = null,
     val mood: Mood = Mood.HAPPY,
-    val growth: Growth = Growth.SPROUT,
+    val growth: Growth = Growth.LEAF,
 )
 
 /** Réunit repas, eau, profil et sport du jour (le tableau de bord voit tous les paquets). */

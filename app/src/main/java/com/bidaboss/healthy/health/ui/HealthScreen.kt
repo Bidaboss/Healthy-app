@@ -61,7 +61,7 @@ fun HealthScreen(
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         PhotoBackground(PhotoTab.HEALTH) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                PhotoTitle("Santé", modifier = Modifier.padding(top = 24.dp, bottom = 48.dp))
+                PhotoTitle("Santé", modifier = Modifier.padding(top = 24.dp, bottom = 8.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(state.sections) { section ->
                         FilterChip(selected = shown == section, onClick = { selected = section }, label = { Text(section.label) })

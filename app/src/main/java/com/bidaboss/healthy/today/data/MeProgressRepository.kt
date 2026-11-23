@@ -1,5 +1,6 @@
 package com.bidaboss.healthy.today.data
 
+import com.bidaboss.healthy.body.data.MeBadge
 import com.bidaboss.healthy.body.data.MeProgress
 import com.bidaboss.healthy.core.progress.Badge
 import com.bidaboss.healthy.core.progress.BadgeProgress
@@ -34,6 +35,7 @@ class MeProgressRepository(
             unlockedTitles = unlocked.asReversed().map { it.title },
             nextBadgeTitle = next?.title,
             nextBadgeProgress = next?.takeIf { it.target > 1 }?.let { "${it.current(progress)} sur ${it.target}" },
+            badges = Badge.entries.map { MeBadge(it, it.isUnlocked(progress)) },
         )
     }
 }

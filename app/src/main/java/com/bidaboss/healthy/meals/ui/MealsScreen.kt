@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -90,6 +91,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+private val timeFormat = DateTimeFormatter.ofPattern("HH:mm", Locale.FRENCH)
 private val dayFormat = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.FRENCH)
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -447,7 +449,8 @@ private fun MealCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = meal.title ?: meal.type.label,
+                    // Le type de repas est déjà sur la pastille au-dessus : sans titre, la carte donne l'heure.
+                    text = meal.title ?: meal.eatenAt.format(timeFormat),
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f),
                 )
@@ -509,7 +512,9 @@ internal fun savedFoodKeyOf(name: String): String = savedKeyOf(name)
 @Composable
 private fun DrinkButtons(onAdd: (Drink) -> Unit) {
     val context = LocalContext.current
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+    // Dans une carte : posé directement sur la photo, le texte devenait illisible (retouches du 23/11/2026).
+    Card(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text("Une boisson ?", style = MaterialTheme.typography.titleSmall)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Drink.entries.forEach { drink ->
@@ -528,6 +533,7 @@ private fun DrinkButtons(onAdd: (Drink) -> Unit) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
     }
 }
 
@@ -548,7 +554,14 @@ private fun MealType.icon(): ImageVector = when (this) {
 
 @Composable
 private fun MealTypeHeader(type: MealType) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+    // Sur une pastille de la couleur des cartes : le titre est lisible sur la photo comme sur le fond uni.
+    Row(
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest, RoundedCornerShape(24.dp))
+            .padding(start = 6.dp, end = 16.dp, top = 6.dp, bottom = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
         Box(
             modifier = Modifier.size(36.dp).background(type.color(), CircleShape),
             contentAlignment = Alignment.Center,

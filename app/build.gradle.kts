@@ -135,6 +135,10 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons.extended)
     debugImplementation(libs.compose.ui.tooling)
+    // Aperçus d'écrans pour la relecture du design (ScreenshotsTest, Robolectric) : rien de plus dans l'APK de publication.
+    debugImplementation(libs.compose.ui.test.manifest)
+    testImplementation(platform(libs.compose.bom))
+    testImplementation(libs.compose.ui.test.junit4)
     implementation(libs.glance.appwidget)
     implementation(libs.glance.material3)
     implementation(libs.androidx.health.connect)

@@ -41,6 +41,7 @@ import com.bidaboss.healthy.core.progress.Badge
 import com.bidaboss.healthy.core.progress.BadgeProgress
 import com.bidaboss.healthy.core.progress.Mood
 import com.bidaboss.healthy.meals.data.MealRepository
+import com.bidaboss.healthy.ui.BadgeIcon
 import com.bidaboss.healthy.ui.Pousse
 import com.bidaboss.healthy.ui.healthyViewModelFactory
 import com.bidaboss.healthy.settings.data.AppTheme
@@ -128,95 +129,3 @@ private fun BadgeCard(item: BadgeItem) {
         }
     }
 }
-
-/** Badges de série (semaines actives) : médaille ou pièce ; les autres : coffre en pirate. */
-private val Badge.isStreak: Boolean
-    get() = this == Badge.TWO_WEEKS || this == Badge.FOUR_WEEKS || this == Badge.TWELVE_WEEKS
-
-/**
- * Dessin du badge selon le thème : médaille corail (Classique), coffre ou pièce d'or (Pirate),
- * tampon de passeport (Voyage). Gris tant qu'il n'est pas débloqué.
- */
-@Composable
-private fun BadgeIcon(badge: Badge, unlocked: Boolean) {
-    val locked = MaterialTheme.colorScheme.outline
-    val ambiance = HealthyTheme.ambiance
-    Canvas(Modifier.size(52.dp)) {
-        when {
-            ambiance.theme == AppTheme.TRAVEL -> stamp(unlocked, locked, ambiance, tilt = (badge.ordinal % 3 - 1) * 8f)
-            ambiance.theme == AppTheme.PIRATE && !badge.isStreak -> chest(unlocked, locked, ambiance)
-            else -> medal(unlocked, locked, ambiance)
-        }
-    }
-}
-
-private fun DrawScope.star(c: Offset, outer: Float, inner: Float) = Path().apply {
-    for (i in 0 until 10) {
-        val angle = Math.toRadians(-90.0 + i * 36.0)
-        val radius = if (i % 2 == 0) outer else inner
-        val x = c.x + (radius * Math.cos(angle)).toFloat()
-        val y = c.y + (radius * Math.sin(angle)).toFloat()
-        if (i == 0) moveTo(x, y) else lineTo(x, y)
-    }
-    close()
-}
-
-/** Médaille : étoile dorée sur fond d'accent une fois débloquée (pièce d'or en Pirate), grise avant. */
-private fun DrawScope.medal(unlocked: Boolean, locked: Color, ambiance: Ambiance) {
-    val r = size.minDimension / 2
-    val c = Offset(r, r)
-    val disc = if (ambiance.theme == AppTheme.PIRATE) ambiance.sparkle else ambiance.accent
-    val starColor = if (ambiance.theme == AppTheme.PIRATE) Color(0xFF9A6A0B) else ambiance.sparkle
-    drawCircle(if (unlocked) disc else locked.copy(alpha = 0.25f), radius = r, center = c)
-    drawCircle(if (unlocked) Color.White else locked, radius = r * 0.78f, center = c, style = Stroke(width = r * 0.08f))
-    val star = star(c, r * 0.52f, r * 0.22f)
-    drawPath(star, if (unlocked) starColor else locked)
-    if (!unlocked) drawPath(star, locked, style = Stroke(width = 2f, cap = StrokeCap.Round))
-}
-
-/** Coffre au trésor : bois brun, bandes et serrure dorées. */
-private fun DrawScope.chest(unlocked: Boolean, locked: Color, ambiance: Ambiance) {
-    val w = size.width
-    val h = size.height
-    val wood = if (unlocked) Color(0xFF8B5A2B) else locked.copy(alpha = 0.25f)
-    val band = if (unlocked) ambiance.sparkle else locked
-    val top = Offset(w * 0.08f, h * 0.18f)
-    drawRoundRect(wood, topLeft = top, size = Size(w * 0.84f, h * 0.3f), cornerRadius = CornerRadius(w * 0.2f, w * 0.2f))
-    drawRect(wood, topLeft = Offset(w * 0.08f, h * 0.44f), size = Size(w * 0.84f, h * 0.4f))
-    drawLine(band, Offset(w * 0.08f, h * 0.46f), Offset(w * 0.92f, h * 0.46f), strokeWidth = w * 0.06f)
-    listOf(0.22f, 0.78f).forEach { f ->
-        drawLine(band, Offset(w * f, h * 0.2f), Offset(w * f, h * 0.84f), strokeWidth = w * 0.06f)
-    }
-    drawRoundRect(band, topLeft = Offset(w * 0.42f, h * 0.4f), size = Size(w * 0.16f, h * 0.2f), cornerRadius = CornerRadius(w * 0.03f))
-    if (!unlocked) {
-        drawRoundRect(locked, topLeft = top, size = Size(w * 0.84f, h * 0.66f), cornerRadius = CornerRadius(w * 0.08f), style = Stroke(width = 2f))
-    }
-}
-
-/** Tampon de passeport : double cercle, contour en pointillés et avion au centre, un peu penché. */
-private fun DrawScope.stamp(unlocked: Boolean, locked: Color, ambiance: Ambiance, tilt: Float) {
-    val r = size.minDimension / 2
-    val c = Offset(r, r)
-    val ink = if (unlocked) ambiance.sparkle else locked
-    rotate(tilt, pivot = c) {
-        if (unlocked) drawCircle(ink.copy(alpha = 0.12f), radius = r, center = c)
-        drawCircle(ink, radius = r * 0.94f, center = c, style = Stroke(width = r * 0.07f))
-        drawCircle(
-            ink,
-            radius = r * 0.74f,
-            center = c,
-            style = Stroke(width = r * 0.05f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(r * 0.12f, r * 0.08f))),
-        )
-        val k = r / 26f
-        drawPath(
-            Path().apply {
-                moveTo(c.x + 14f * k, c.y); lineTo(c.x - 10f * k, c.y - 3f * k); lineTo(c.x - 14f * k, c.y); lineTo(c.x - 10f * k, c.y + 3f * k); close()
-                moveTo(c.x + 3f * k, c.y - 2f * k); lineTo(c.x - 5f * k, c.y - 13f * k); lineTo(c.x - 9f * k, c.y - 13f * k); lineTo(c.x - 3f * k, c.y - 2f * k); close()
-                moveTo(c.x + 3f * k, c.y + 2f * k); lineTo(c.x - 5f * k, c.y + 13f * k); lineTo(c.x - 9f * k, c.y + 13f * k); lineTo(c.x - 3f * k, c.y + 2f * k); close()
-            },
-            ink,
-        )
-    }
-}
-
-private val PlanetColors = listOf(Color(0xFF6C4AB6), Color(0xFF3FD0E0), Color(0xFFFFD447), Color(0xFFFF8A65), Color(0xFF7BD99A))

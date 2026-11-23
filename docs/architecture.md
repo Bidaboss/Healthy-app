@@ -306,6 +306,14 @@ réponse illisible) et un message simple, comme pour Open Food Facts. Délai de 
 disponibilité : l'app n'en dépend jamais pour fonctionner. La lecture des réponses est dans `:core`
 (`RouteGeo`, testée avec des réponses d'exemple) ; aucune bibliothèque de cartes, aucun SDK, aucune carte affichée.
 
+## Aperçus d'écrans
+
+`ScreenshotsTest` (Robolectric, rendu natif) lance l'app avec un profil fictif et dessine les 5 onglets dans les 3
+thèmes (écran de 390 dp de large, 1500 dp de haut). Il ne vérifie que « rien ne plante » ; les PNG ne sont écrits que si
+on donne un dossier : `SCREENSHOTS_OUT=/chemin ./gradlew :app:testDebugUnitTest --tests '*ScreenshotsTest'` (ou
+`-Dscreenshots.out`). Servent à la relecture du design avant fusion. Les dépendances `ui-test` ne sont que dans les
+tests et le manifeste de debug.
+
 ## Contrôles automatiques (GitHub Actions)
 
 Tests de `:core`, tests de `:app`, lint Android, construction de l'APK, à chaque push.

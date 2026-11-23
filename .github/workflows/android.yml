@@ -30,6 +30,12 @@ jobs:
 
       # La clé de signature et le lien du dossier Drive sont des secrets du dépôt (Settings > Secrets and
       # variables > Actions), pas des fichiers : le keystore est recréé ici, dans un dossier temporaire.
+      # Numéro de build = numéro d'exécution + 1000. Les téléphones déjà installés viennent de l'ancien dépôt
+      # (numéros jusqu'à environ 170) : sans ce décalage, le numéro de ce dépôt, reparti de 1, serait plus petit
+      # et Android refuserait la mise à jour. Ne jamais baisser ce décalage.
+      - name: Numéro de build
+        run: echo "BUILD_NUMBER=$((GITHUB_RUN_NUMBER + 1000))" >> "$GITHUB_ENV"
+
       - name: Recréer la clé de signature
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -70,7 +76,7 @@ jobs:
       # Nom avec le numéro de build : l'app s'en sert pour savoir si le fichier déposé dans le
       # dossier Drive des mises à jour est plus récent (voir docs/architecture.md, « Mises à jour »).
       - name: Nommer l'APK avec son numéro
-        run: mv app/build/outputs/apk/release/app-release.apk "app/build/outputs/apk/release/healthy-${GITHUB_RUN_NUMBER}.apk"
+        run: mv app/build/outputs/apk/release/app-release.apk "app/build/outputs/apk/release/healthy-${BUILD_NUMBER}.apk"
 
       - name: Publier l'APK
         uses: actions/upload-artifact@v4

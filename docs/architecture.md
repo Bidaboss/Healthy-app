@@ -220,7 +220,9 @@ Permission `CAMERA` (matériel facultatif), demandée au premier scan.
 
 Deuxième et dernière utilisation du réseau (choix du propriétaire, 13/11/2026) : `update/`. Le propriétaire dépose dans
 un dossier Drive partagé par lien (lecture) l'APK publié par GitHub Actions, nommé `healthy-<numéro>.apk`
-(le numéro de build, qui est aussi le `versionCode`). L'app :
+(le numéro de build, qui est aussi le `versionCode`). Ce numéro est le numéro d'exécution GitHub + 1000 (voir le workflow) : les
+téléphones installés viennent de l'ancien dépôt privé (numéros jusqu'à environ 170), et un numéro plus petit serait refusé par
+Android. Ne jamais baisser ce décalage. L'app :
 
 1. lit la page publique du dossier `drive.google.com/embeddedfolderview?id=…`, sans compte ni clé
    (`DriveFolder.parseListing` dans `:core`, testé) ; si Google change cette page, la vérification

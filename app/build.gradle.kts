@@ -34,10 +34,10 @@ android {
         applicationId = "com.bidaboss.healthy"
         minSdk = 26
         targetSdk = 35
-        // Numéro de build GitHub Actions : chaque APK publié a un numéro plus grand, visible en bas de
-        // Réglages (« Healthy version 0.1.42 »). En local, 1. Il doit toujours augmenter : Android refuse
-        // d'installer une version plus petite par-dessus.
-        val buildNumber = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
+        // Numéro de build calculé par GitHub Actions (BUILD_NUMBER, voir le workflow) : chaque APK publié a un
+        // numéro plus grand, visible en bas de Réglages (« Healthy version 0.1.1042 »). En local, 1. Il doit
+        // toujours augmenter : Android refuse d'installer une version plus petite par-dessus.
+        val buildNumber = System.getenv("BUILD_NUMBER")?.toIntOrNull() ?: 1
         versionCode = buildNumber
         versionName = "0.1.$buildNumber"
         // Dossier Google Drive des mises à jour, partagé par lien (lecture). Le lien n'est pas dans le dépôt :

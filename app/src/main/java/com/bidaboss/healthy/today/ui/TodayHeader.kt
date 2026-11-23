@@ -131,7 +131,7 @@ fun TodayHeader(state: HeaderUiState, onOpenBadges: () -> Unit, modifier: Modifi
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Pousse(state.mood, growth = state.growth)
+        Pousse(state.mood, size = 84.dp, growth = state.growth)
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             texts.dayTitle?.let {
                 Text(it, color = white, style = MaterialTheme.typography.labelLarge.copy(shadow = photoShadow), fontWeight = FontWeight.Bold)

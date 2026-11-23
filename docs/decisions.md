@@ -468,6 +468,17 @@ Cette section est tenue à jour par chaque lot, dans son emplacement.
 - **Palette Classique** (retouches du 23/11/2026, prototype) : fond F3FAF5, primaire 1F7A47, accent corail FF8A65.
 - Aucune table, aucune migration.
 
+### Retouches du 23/11/2026 (alignement sur le prototype, qui fait foi)
+
+- **Moi** a le fond photo d'Aujourd'hui (comme le prototype) : titre blanc et bouton Réglages translucide, carte
+  profil (nom, « Maintien X kcal · Y kg »), « Mon poids » (dernière pesée, « + Pesée » en accent, poids en grand,
+  variation sur 7 jours, courbe à aire claire et point d'accent), carte « Maintien estimé », « Mes badges » en
+  grille de 3 colonnes (touche = détail). La proposition « Mon maintien » s'affiche sous le profil quand il y en a une.
+- **Repas** : les boissons sont dans une carte et le titre de chaque type de repas sur une pastille, pour rester
+  lisibles quand ils sont posés sur la photo.
+- Aperçus d'écrans : `ScreenshotsTest` (Robolectric) dessine les 5 onglets dans les 3 thèmes avec un profil fictif ;
+  il n'écrit les PNG que si `SCREENSHOTS_OUT` est donné.
+
 ### Lot 2 : Repas (livré, base v15)
 
 - **Onglet Repas** : fond photo (`PhotoBackground`), jour et total sur la photo, puis la carte

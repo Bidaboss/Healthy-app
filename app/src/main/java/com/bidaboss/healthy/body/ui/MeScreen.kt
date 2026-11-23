@@ -1,6 +1,22 @@
 package com.bidaboss.healthy.body.ui
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
+import com.bidaboss.healthy.ui.BadgeIcon
+import com.bidaboss.healthy.ui.PhotoBackground
+import com.bidaboss.healthy.ui.PhotoTab
+import com.bidaboss.healthy.ui.PhotoTitle
+import com.bidaboss.healthy.ui.theme.HealthyTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,7 +36,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -54,8 +69,8 @@ import java.util.Locale
 private val dayFormat = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.FRENCH)
 
 /**
- * Onglet Moi (refonte, lot 4) : profil avec Pousse et maintien estimé, Mon poids avec « + Pesée », Mes badges.
- * L'icône à curseurs ouvre Réglages. Pas de photo de fond sur Moi.
+ * Onglet Moi (refonte, lot 4 ; fond photo et mise en page du prototype aux retouches) : profil, Mon poids, Mes badges.
+ * L'icône à curseurs ouvre Réglages.
  */
 @Composable
 fun MeScreen(
@@ -78,25 +93,40 @@ fun MeScreen(
         maintenanceViewModel.onResume()
         onPauseOrDispose { }
     }
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Box(Modifier.fillMaxWidth()) {
-            Text("Moi", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.align(Alignment.CenterStart))
-            IconButton(onClick = onOpenSettings, modifier = Modifier.align(Alignment.CenterEnd)) {
-                Icon(Icons.Rounded.Tune, contentDescription = "Réglages")
+    // Photo de fond comme sur Aujourd'hui (prototype) : titre blanc, profil qui chevauche la photo.
+    Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        PhotoBackground(PhotoTab.TODAY) {
+            Column(modifier = Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Box(Modifier.fillMaxWidth().padding(top = 28.dp, bottom = 40.dp)) {
+                    PhotoTitle("Moi", modifier = Modifier.align(Alignment.CenterStart))
+                    IconButton(
+                        onClick = onOpenSettings,
+                        modifier = Modifier.align(Alignment.CenterEnd).size(44.dp).background(Color.White.copy(alpha = 0.28f), CircleShape),
+                    ) {
+                        Icon(Icons.Rounded.Tune, contentDescription = "Réglages", tint = Color.White)
+                    }
+                }
+                ProfileCard(state, onOpenProfile)
+                // La proposition d'ajuster le maintien (avant la refonte sur Aujourd'hui) : visible seulement quand il y en a une.
+                MaintenanceCard(maintenance.info, onOpenDetail = onOpenProfile, onLater = maintenanceViewModel::later)
+                SectionLabel("MON POIDS")
+                WeightCard(state, onOpenWeight, onAdd = viewModel::openWeighIn)
+                state.maintenanceKcal?.let { MaintenanceCardInfo(it, state.maintenanceAdjusted) }
+                SectionLabel(ThemeTexts.current.badgesTitle.uppercase(Locale.FRENCH) + " · ${state.progress.unlockedBadges} SUR ${state.progress.totalBadges}")
+                BadgesGrid(state, onOpenBadges)
+                Spacer(Modifier.height(8.dp))
             }
         }
-        ProfileCard(state, onOpenProfile)
-        // La proposition d'ajuster le maintien (avant la refonte sur Aujourd'hui) : visible seulement quand il y en a une.
-        MaintenanceCard(maintenance.info, onOpenDetail = onOpenProfile, onLater = maintenanceViewModel::later)
-        WeightCard(state, onOpenWeight, onAdd = viewModel::openWeighIn)
-        BadgesCard(state, onOpenBadges)
     }
     if (state.formOpen) {
         WeighInDialog(state, viewModel::setWeight, viewModel::setWaist, viewModel::saveWeighIn, viewModel::closeWeighIn)
     }
+}
+
+/** Petit titre de section posé sur la photo : blanc, majuscules, ombre douce. */
+@Composable
+private fun SectionLabel(text: String) {
+    PhotoTitle(text, modifier = Modifier.padding(start = 6.dp), style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 0.5.sp))
 }
 
 @Composable
@@ -106,59 +136,80 @@ private fun ProfileCard(state: MeUiState, onOpen: () -> Unit) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Pousse(if (state.progress.unlockedBadges > 0) Mood.PROUD else Mood.HAPPY, size = 96.dp, growth = state.progress.growth)
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Pousse(if (state.progress.unlockedBadges > 0) Mood.PROUD else Mood.HAPPY, size = 72.dp, growth = state.progress.growth)
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(profile?.firstName?.takeIf { it.isNotBlank() } ?: "Mon profil", style = MaterialTheme.typography.titleLarge)
-                Text(
-                    ThemeTexts.current.streakDescription(state.progress.streakWeeks).replaceFirstChar(Char::uppercase),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
                 if (profile == null) {
-                    Text("Complète ton profil pour voir ton maintien.")
+                    Text("Complète ton profil pour voir ton maintien.", style = MaterialTheme.typography.bodyMedium)
                 } else {
-                    val age = Maintenance.ageYears(profile.birthDate, state.today)
+                    val kg = state.lastWeighIn?.weightKg ?: profile.weightKg
                     Text(
-                        "$age ans · ${profile.heightCm.toInputText()} cm",
+                        (state.maintenanceKcal?.let { "Maintien ${formatThousands(it)} kcal · " }.orEmpty()) + "${kg.toInputText()} kg",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        ThemeTexts.current.streakDescription(state.progress.streakWeeks).replaceFirstChar(Char::uppercase),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    state.maintenanceKcal?.let { MaintenanceLine(it, state.maintenanceAdjusted) }
                 }
             }
         }
     }
 }
 
+/** « Maintien estimé » : petite carte sous le poids, comme le prototype. */
 @Composable
-private fun MaintenanceLine(kcal: Int, adjusted: Boolean) {
-    Text("Maintien estimé : ${formatThousands(kcal)} kcal", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-    if (adjusted) {
-        Text(
-            "Ajusté d'après tes repas et tes pesées.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+private fun MaintenanceCardInfo(kcal: Int, adjusted: Boolean) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("Maintien estimé", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("${formatThousands(kcal)} kcal par jour", style = MaterialTheme.typography.titleLarge)
+            Text(
+                if (adjusted) "Ajusté d'après tes repas et tes pesées." else "Calculé d'après ton profil.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
+}
+
+/** « hier », « aujourd'hui » ou « lundi 23 novembre ». */
+private fun lastWeighInWhen(date: LocalDate, today: LocalDate): String = when (date) {
+    today -> "aujourd'hui"
+    today.minusDays(1) -> "hier"
+    else -> date.format(dayFormat)
 }
 
 @Composable
 private fun WeightCard(state: MeUiState, onOpen: () -> Unit, onAdd: () -> Unit) {
     val last = state.lastWeighIn
     Card(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Mon poids", style = MaterialTheme.typography.titleMedium)
-            if (last == null) {
-                Text("Aucune pesée pour l'instant.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            } else {
-                Text("${last.weightKg.toInputText()} kg", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
+        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "Dernière pesée : ${last.date.format(dayFormat)}",
-                    style = MaterialTheme.typography.bodySmall,
+                    if (last == null) "Aucune pesée pour l'instant" else "Dernière pesée · ${lastWeighInWhen(last.date, state.today)}",
+                    style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
                 )
+                Button(
+                    onClick = onAdd,
+                    colors = ButtonDefaults.buttonColors(containerColor = HealthyTheme.ambiance.accent, contentColor = HealthyTheme.ambiance.onAccent),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                    modifier = Modifier.height(36.dp),
+                ) { Text("+ Pesée", fontWeight = FontWeight.Black) }
+            }
+            if (last != null) {
+                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("${last.weightKg.toInputText()} kg", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Black)
+                    weekDelta(state.trend)?.let {
+                        Text(it, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(bottom = 6.dp))
+                    }
+                }
             }
             if (state.trend.size >= 2) {
                 WeightCurve(state.trend)
@@ -168,57 +219,77 @@ private fun WeightCard(state: MeUiState, onOpen: () -> Unit, onAdd: () -> Unit) 
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            state.maintenanceKcal?.let { MaintenanceLine(it, state.maintenanceAdjusted) }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = onAdd) { Text("+ Pesée") }
-                OutlinedButton(onClick = onOpen) { Text("Toutes mes pesées") }
-            }
+            TextButton(onClick = onOpen, contentPadding = PaddingValues(0.dp)) { Text("Toutes mes pesées") }
         }
     }
 }
 
-/** Petite courbe de la moyenne sur 7 jours, sur les 60 derniers jours au plus. */
+/** « −0,4 kg sur 7 jours » : la courbe lissée d'aujourd'hui moins celle d'il y a 7 jours (rien s'il n'y a pas assez d'historique). */
+private fun weekDelta(trend: List<Pair<LocalDate, Double>>): String? {
+    val latest = trend.lastOrNull() ?: return null
+    val before = trend.lastOrNull { !it.first.isAfter(latest.first.minusDays(7)) } ?: return null
+    val delta = Math.round((latest.second - before.second) * 10) / 10.0
+    val sign = if (delta > 0) "+" else if (delta < 0) "−" else ""
+    return "$sign${kotlin.math.abs(delta).toInputText()} kg sur 7 jours"
+}
+
+/** Courbe de la moyenne sur 7 jours (60 derniers jours au plus) : aire claire, trait, point d'accent au bout. */
 @Composable
 private fun WeightCurve(trend: List<Pair<LocalDate, Double>>) {
     val points = trend.takeLast(60)
     val line = MaterialTheme.colorScheme.primary
-    val axis = MaterialTheme.colorScheme.outlineVariant
+    val fill = MaterialTheme.colorScheme.surfaceVariant
+    val dot = HealthyTheme.ambiance.accent
     val first = points.first().first
     val span = ChronoUnit.DAYS.between(first, points.last().first).coerceAtLeast(1).toFloat()
     val min = points.minOf { it.second } - 0.3
     val max = points.maxOf { it.second } + 0.3
     val description = "Courbe du poids de ${points.first().second.toInputText()} kg à ${points.last().second.toInputText()} kg " +
         "du ${points.first().first.format(DateTimeFormatter.ofPattern("d MMMM", Locale.FRENCH))} au ${points.last().first.format(DateTimeFormatter.ofPattern("d MMMM", Locale.FRENCH))}."
-    Canvas(Modifier.fillMaxWidth().height(96.dp).clearAndSetSemantics { contentDescription = description }) {
-        drawLine(axis, Offset(0f, size.height), Offset(size.width, size.height), strokeWidth = 2f)
+    Canvas(Modifier.fillMaxWidth().height(120.dp).clearAndSetSemantics { contentDescription = description }) {
+        val pad = 6.dp.toPx()
+        fun x(date: LocalDate) = pad + ChronoUnit.DAYS.between(first, date) / span * (size.width - 2 * pad)
+        fun y(kg: Double) = pad + ((max - kg) / (max - min) * (size.height - 2 * pad)).toFloat()
         val path = Path()
-        points.forEachIndexed { i, (date, kg) ->
-            val x = ChronoUnit.DAYS.between(first, date) / span * size.width
-            val y = ((max - kg) / (max - min) * size.height).toFloat()
-            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        points.forEachIndexed { i, (date, kg) -> if (i == 0) path.moveTo(x(date), y(kg)) else path.lineTo(x(date), y(kg)) }
+        val area = Path().apply {
+            addPath(path)
+            lineTo(x(points.last().first), size.height)
+            lineTo(x(first), size.height)
+            close()
         }
-        drawPath(path, line, style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round))
+        drawPath(area, fill)
+        drawPath(path, line, style = Stroke(width = 3.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+        drawCircle(dot, radius = 6.dp.toPx(), center = Offset(x(points.last().first), y(points.last().second)))
     }
 }
 
+/** Mes badges : grille de 3 colonnes, un badge par tuile (le détail s'ouvre en touchant). */
 @Composable
-private fun BadgesCard(state: MeUiState, onOpen: () -> Unit) {
-    val progress = state.progress
-    Card(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(ThemeTexts.current.badgesTitle, style = MaterialTheme.typography.titleMedium)
-            Text(
-                "${progress.unlockedBadges} sur ${progress.totalBadges} débloqués",
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            if (progress.unlockedTitles.isNotEmpty()) Text(progress.unlockedTitles.take(3).joinToString(" · "))
-            progress.nextBadgeTitle?.let { next ->
-                Text(
-                    "Prochain : $next" + (progress.nextBadgeProgress?.let { " ($it)" } ?: ""),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+private fun BadgesGrid(state: MeUiState, onOpen: () -> Unit) {
+    val badges = state.progress.badges
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        badges.chunked(3).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                row.forEach { item ->
+                    Card(onClick = onOpen, modifier = Modifier.weight(1f)) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 14.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            BadgeIcon(item.badge, item.unlocked, size = 58.dp)
+                            Text(
+                                item.badge.title,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.ExtraBold,
+                                textAlign = TextAlign.Center,
+                                color = if (item.unlocked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+                repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }

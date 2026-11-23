@@ -111,29 +111,27 @@ class ThemesTest {
     }
 
     @Test
-    fun `Espace, Arcade retro et Montagne ont leurs textes et leur serie`() {
-        val space = ThemeTexts.of(AppTheme.SPACE)
-        assertEquals("Décollage réussi !", space.celebrationTitle)
-        assertEquals("3 missions", "${space.streakValue(3)} ${space.streakUnit(3)}")
-
-        val arcade = ThemeTexts.of(AppTheme.ARCADE)
-        assertEquals("Niveau terminé !", arcade.celebrationTitle)
-        assertTrue(arcade.streakDescription(4).startsWith("Niveau 4"))
-
-        val mountain = ThemeTexts.of(AppTheme.MOUNTAIN)
-        assertEquals("Sommet atteint !", mountain.celebrationTitle)
-        assertEquals("1 200 m", "${mountain.streakValue(3)} ${mountain.streakUnit(3)}")
-        assertEquals("400 m", "${mountain.streakValue(1)} ${mountain.streakUnit(1)}")
+    fun `un ancien theme retire revient a Classique`() {
+        val context = ApplicationProvider.getApplicationContext<Application>()
+        listOf("SPACE", "ARCADE", "MOUNTAIN", "n'importe quoi").forEach { old ->
+            context.getSharedPreferences("appearance", android.content.Context.MODE_PRIVATE).edit().putString("theme", old).commit()
+            assertEquals(old, AppTheme.CLASSIC, AppearanceStore(context).theme.value)
+        }
+        // Les trois thèmes gardés sont relus tels quels.
+        AppTheme.entries.forEach { kept ->
+            context.getSharedPreferences("appearance", android.content.Context.MODE_PRIVATE).edit().putString("theme", kept.name).commit()
+            assertEquals(kept, AppearanceStore(context).theme.value)
+        }
     }
 
     @Test
-    fun `les six themes ont un texte pour chaque ecran`() {
+    fun `les trois themes ont un texte pour chaque ecran`() {
         AppTheme.entries.forEach { theme ->
             val texts = ThemeTexts.of(theme)
             listOf(texts.restDay, texts.noMeal, texts.noPlan, texts.badgesTitle, texts.celebrationText)
                 .forEach { assertTrue("$theme", it.isNotBlank()) }
         }
-        assertEquals(6, AppTheme.entries.size)
+        assertEquals(3, AppTheme.entries.size)
     }
 
     @Test

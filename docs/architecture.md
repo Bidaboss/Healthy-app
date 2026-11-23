@@ -20,12 +20,12 @@ com.bidaboss.healthy
 ├── today/ui           onglet Aujourd'hui (tableau de bord)
 ├── today/widget       widget d'écran d'accueil (Glance), passe par today/data
 ├── meals/{data,ui}    journal des repas
-├── health/{data,ui}   montre (Garmin) lue par Health Connect, en lecture seule
+├── health/{data,ui}   montre (Garmin) lue par Health Connect, en lecture seule ; onglet Santé
 ├── workout/{data,ui}  plan sportif et séances (+ reminder : alarme et notification du rappel)
-├── body/{data,ui}     profil, pesées et tour de taille
+├── body/{data,ui}     profil, pesées et tour de taille ; onglet Moi
 ├── settings/data      thème et ton de motivation (préférences Android), journée pour la motivation
 ├── settings/reminder  alarmes et notifications de motivation
-├── settings/ui        réglages
+├── settings/ui        Réglages (ouverts depuis Moi) et écran Apparence
 ├── importexport/{data,ui}  import (et plus tard export)
 ├── update/{data,ui}   mise à jour de l'app depuis le dossier Drive
 ├── data/              HealthyDatabase (seul point d'entrée Room)
@@ -50,6 +50,11 @@ com.bidaboss.healthy
 - Les ViewModels sont créés via `healthyViewModelFactory` à partir de `AppContainer`.
 - Quand une fonctionnalité a besoin d'une donnée d'une autre (Repas affiche le maintien du profil),
   `AppContainer` lui passe une fonction (`maintenanceKcal`) plutôt que le repository de l'autre paquet.
+- Navigation : 5 onglets (Aujourd'hui, Repas, Sport, Santé, Moi), routes et rattachement de chaque écran à son
+  onglet dans `ui/HealthyApp.kt` (`tabRouteOf`), avec un emplacement par lot de la refonte (« LOT n »).
+- Fond photo des onglets : `PhotoBackground(onglet, thème)` et `PhotoTitle` (`ui/PhotoBackground.kt`) ; les 12
+  décors sont des WebP dans `res/drawable-nodpi` (nommés `decor_<thème>_<onglet>`), moins de 3 Mo au total
+  (vérifié par `PhotoBackgroundTest`). Un nouvel écran d'onglet pose le composant dans son contenu qui défile.
 - Typographie et formes : `ui/theme/Type.kt` (Nunito, police variable dans `res/font`, licence dans
   `licenses/`). Couleurs des macros : `ui/theme/MacroColors.kt`, contraste vérifié par `ThemesTest`.
 

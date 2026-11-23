@@ -26,9 +26,6 @@ internal fun tonalColorsOf(theme: AppTheme, dark: Boolean): TonalColors {
         AppTheme.CLASSIC -> TonalColors(Color(0xFFD3EEDC), Color(0xFF14532F))
         AppTheme.PIRATE -> TonalColors(Color(0xFFE6DCC6), Color(0xFF1E2A3A))
         AppTheme.TRAVEL -> TonalColors(Color(0xFFD2E8F0), Color(0xFF0F4459))
-        AppTheme.SPACE -> TonalColors(Color(0xFFE4DDF5), Color(0xFF3A2580))
-        AppTheme.ARCADE -> TonalColors(Color(0xFFFBD3E7), Color(0xFF7A0E4A))
-        AppTheme.MOUNTAIN -> TonalColors(Color(0xFFD7E6E0), Color(0xFF1F4036))
     }
 }
 

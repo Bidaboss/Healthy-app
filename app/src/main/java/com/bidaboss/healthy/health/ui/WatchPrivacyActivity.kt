@@ -42,7 +42,7 @@ class WatchPrivacyActivity : ComponentActivity() {
                         Text("Healthy et ta montre", style = MaterialTheme.typography.headlineMedium)
                         Text(
                             "Avec ton autorisation, Healthy lit dans Health Connect tes pas, tes calories actives, " +
-                                "tes séances d'entraînement, ton sommeil et ta fréquence cardiaque.",
+                                "tes séances d'entraînement, ta distance, ton sommeil (avec ses phases si ta montre les envoie) et ta fréquence cardiaque.",
                         )
                         Text("Ces données restent sur ton téléphone : Healthy ne les envoie nulle part et n'a pas de compte.")
                         Text(

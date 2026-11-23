@@ -303,6 +303,35 @@ class MigrationTest {
     }
 
     @Test
+    fun `de la version 16 a la 17, les releves de la montre sont conserves et gagnent distance et detail de la nuit`() {
+        helper.createDatabase(DB_NAME, 16).use { db ->
+            db.execSQL(
+                "INSERT INTO watch_days (local_date, steps, active_kcal, sleep_min, avg_bpm, min_bpm, updated_at_epoch_ms) " +
+                    "VALUES ('2026-11-22', 8000, 300, 430, 70, 48, 1)",
+            )
+        }
+        val migrated = helper.runMigrationsAndValidate(DB_NAME, 17, true, Migrations.MIGRATION_16_17)
+        migrated.query(
+            "SELECT steps, sleep_min, distance_m, sleep_start, sleep_end, sleep_stages, night_avg_bpm, night_min_bpm FROM watch_days",
+        ).use {
+            assertTrue(it.moveToFirst())
+            assertEquals(8000, it.getInt(0))
+            assertEquals(430, it.getInt(1))
+            // Les nouvelles mesures sont vides (null), jamais zéro.
+            (2..7).forEach { col -> assertTrue(it.isNull(col)) }
+        }
+        migrated.execSQL(
+            "UPDATE watch_days SET distance_m = 6200, sleep_start = '2026-11-21T23:10', sleep_end = '2026-11-22T06:40', " +
+                "sleep_stages = 'L45,D30', night_avg_bpm = 52, night_min_bpm = 46",
+        )
+        migrated.query("SELECT distance_m, sleep_stages FROM watch_days").use {
+            assertTrue(it.moveToFirst())
+            assertEquals(6200, it.getInt(0))
+            assertEquals("L45,D30", it.getString(1))
+        }
+    }
+
+    @Test
     fun `chaque changement de version a sa migration`() {
         val covered = Migrations.ALL.map { it.startVersion to it.endVersion }
         assertEquals((1 until HealthyDatabase.VERSION).map { it to it + 1 }, covered)

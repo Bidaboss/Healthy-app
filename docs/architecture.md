@@ -50,6 +50,9 @@ com.bidaboss.healthy
 - Les ViewModels sont créés via `healthyViewModelFactory` à partir de `AppContainer`.
 - Quand une fonctionnalité a besoin d'une donnée d'une autre (Repas affiche le maintien du profil),
   `AppContainer` lui passe une fonction (`maintenanceKcal`) plutôt que le repository de l'autre paquet.
+- Santé et Moi lisent ce qui vient d'autres paquets par des fonctions que fournit `AppContainer` (`healthWeek`,
+  `weeklyRecap`, `meProgress`, `maintenanceKcal`, `maintenanceInfo`), calculées dans `today/data`
+  (`HealthWeekRepository`, `MeProgressRepository`) : `health` et `body` ne s'importent pas entre eux.
 - Navigation : 5 onglets (Aujourd'hui, Repas, Sport, Santé, Moi), routes et rattachement de chaque écran à son
   onglet dans `ui/HealthyApp.kt` (`tabRouteOf`), avec un emplacement par lot de la refonte (« LOT n »).
 - Fond photo des onglets : `PhotoBackground(onglet, thème)` et `PhotoTitle` (`ui/PhotoBackground.kt`) ; les 12

@@ -5,6 +5,9 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.bidaboss.healthy.data.HealthyDatabase
 import com.bidaboss.healthy.data.RoomTransactionRunner
+import com.bidaboss.healthy.core.watch.SleepSegment
+import com.bidaboss.healthy.core.watch.SleepStage
+import com.bidaboss.healthy.health.data.SleepDetail
 import com.bidaboss.healthy.health.data.WatchDay
 import com.bidaboss.healthy.health.data.WatchHistory
 import com.bidaboss.healthy.health.data.WatchIgnoredStore
@@ -33,6 +36,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.concurrent.Executors
 
@@ -121,6 +125,39 @@ class WatchHistoryTest {
         val byDate = kept().associateBy { it.date }
         assertEquals(9000, byDate.getValue(today.minusDays(1)).steps)
         assertEquals(1000, byDate.getValue(today.minusDays(10)).steps)
+    }
+
+    @Test
+    fun `la distance et le detail de la nuit sont gardes et relus, sans jamais effacer une mesure deja gardee`() = runBlocking {
+        val start = LocalDateTime.of(2026, 11, 22, 23, 10)
+        val night = SleepDetail(
+            start, start.plusMinutes(450),
+            listOf(SleepSegment(SleepStage.LIGHT, 45), SleepSegment(SleepStage.DEEP, 30)),
+            nightAvgBpm = 52, nightMinBpm = 46,
+        )
+        watch.days[today] = WatchDay(5000, 200, sleepMin = 450, distanceM = 6200, sleep = night)
+        repository.syncHistory(today)
+        val row = kept().single()
+        assertEquals(6200, row.distanceM)
+        assertEquals(night, row.sleep)
+
+        // Distance et sommeil non autorisés au prochain passage : l'historique garde ce qu'il a.
+        watch.days[today] = WatchDay(6000, 250)
+        repository.syncHistory(today)
+        val after = kept().single()
+        assertEquals(6000, after.steps)
+        assertEquals(6200, after.distanceM)
+        assertEquals(night, after.sleep)
+    }
+
+    @Test
+    fun `une nuit sans phases garde ses heures et son coeur de nuit, sans frise`() = runBlocking {
+        val start = LocalDateTime.of(2026, 11, 22, 23, 0)
+        watch.days[today] = WatchDay(0, null, sleepMin = 400, sleep = SleepDetail(start, start.plusMinutes(420), nightAvgBpm = 55, nightMinBpm = 49))
+        repository.syncHistory(today)
+        val sleep = kept().single().sleep!!
+        assertTrue(sleep.segments.isEmpty())
+        assertEquals(55, sleep.nightAvgBpm)
     }
 
     @Test

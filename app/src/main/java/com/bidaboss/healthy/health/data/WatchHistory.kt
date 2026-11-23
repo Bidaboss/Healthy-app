@@ -9,7 +9,9 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import com.bidaboss.healthy.core.watch.SleepStages
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 /** Le relevé d'un jour de la montre, gardé sur le téléphone. Une mesure absente est null, jamais zéro (v13). */
 @Entity(tableName = "watch_days")
@@ -21,6 +23,13 @@ data class WatchDayEntity(
     @ColumnInfo(name = "avg_bpm") val avgBpm: Int?,
     @ColumnInfo(name = "min_bpm") val minBpm: Int?,
     @ColumnInfo(name = "updated_at_epoch_ms") val updatedAtEpochMs: Long,
+    // v17 (refonte, lot 4) : distance, détail de la nuit. Tout est facultatif : une mesure absente est null.
+    @ColumnInfo(name = "distance_m") val distanceM: Int? = null,
+    @ColumnInfo(name = "sleep_start") val sleepStart: String? = null,
+    @ColumnInfo(name = "sleep_end") val sleepEnd: String? = null,
+    @ColumnInfo(name = "sleep_stages") val sleepStages: String? = null,
+    @ColumnInfo(name = "night_avg_bpm") val nightAvgBpm: Int? = null,
+    @ColumnInfo(name = "night_min_bpm") val nightMinBpm: Int? = null,
 )
 
 @Dao
@@ -62,6 +71,9 @@ class WatchHistory(private val dao: WatchDayDao) {
     suspend fun save(date: LocalDate, day: WatchDay, nowEpochMs: Long) {
         if (day.isEmpty) return
         val old = dao.get(date.toString())
+        val sleep = day.sleep
+        // Le détail d'une nuit ne remplace l'ancien que s'il est là ; ses phases vides gardent les anciennes si les heures sont les mêmes.
+        val keepOldNight = sleep == null
         dao.upsert(
             WatchDayEntity(
                 localDate = date.toString(),
@@ -71,9 +83,24 @@ class WatchHistory(private val dao: WatchDayDao) {
                 avgBpm = (if (day.hasHeart) day.avgBpm else null) ?: old?.avgBpm,
                 minBpm = (if (day.hasHeart) day.minBpm else null) ?: old?.minBpm,
                 updatedAtEpochMs = nowEpochMs,
+                distanceM = day.distanceM?.takeIf { it > 0 } ?: old?.distanceM,
+                sleepStart = if (keepOldNight) old?.sleepStart else sleep?.start?.toString(),
+                sleepEnd = if (keepOldNight) old?.sleepEnd else sleep?.end?.toString(),
+                sleepStages = if (keepOldNight) old?.sleepStages else SleepStages.encode(sleep!!.segments).takeIf { it.isNotEmpty() },
+                nightAvgBpm = if (keepOldNight) old?.nightAvgBpm else sleep!!.nightAvgBpm,
+                nightMinBpm = if (keepOldNight) old?.nightMinBpm else sleep!!.nightMinBpm,
             ),
         )
     }
 
-    private fun WatchDayEntity.toRecord() = WatchDayRecord(LocalDate.parse(localDate), steps, activeKcal, sleepMin, avgBpm, minBpm)
+    private fun WatchDayEntity.toRecord(): WatchDayRecord {
+        val start = sleepStart?.let { runCatching { LocalDateTime.parse(it) }.getOrNull() }
+        val end = sleepEnd?.let { runCatching { LocalDateTime.parse(it) }.getOrNull() }
+        val detail = if (start != null && end != null) {
+            SleepDetail(start, end, SleepStages.decode(sleepStages), nightAvgBpm, nightMinBpm)
+        } else {
+            null
+        }
+        return WatchDayRecord(LocalDate.parse(localDate), steps, activeKcal, sleepMin, avgBpm, minBpm, distanceM, detail)
+    }
 }

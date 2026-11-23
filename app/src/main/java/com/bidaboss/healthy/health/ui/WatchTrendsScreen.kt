@@ -1,20 +1,15 @@
 package com.bidaboss.healthy.health.ui
 
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,65 +20,45 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bidaboss.healthy.core.watch.TrendSummary
 import com.bidaboss.healthy.core.watch.WatchTrends
-import com.bidaboss.healthy.health.data.HealthConnectSource
 import com.bidaboss.healthy.health.data.WatchDayRecord
 import com.bidaboss.healthy.health.data.WatchStatus
-import com.bidaboss.healthy.today.ui.durationText
 import com.bidaboss.healthy.ui.formatThousands
-import com.bidaboss.healthy.ui.healthyViewModelFactory
 import java.time.LocalDate
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /**
- * « Ma montre » : tendances sur 7 ou 30 jours (PRD du 23/11/2026). Lecture seule, ton neutre : aucun seuil, aucune
- * couleur de jugement, aucun conseil. Un jour sans donnée est un trou, jamais un zéro.
+ * Tendances de la montre sur 7 ou 30 jours (PRD du 23/11/2026), partie « Montre » de l'onglet Santé. Lecture seule,
+ * ton neutre : aucun seuil, aucune couleur de jugement, aucun conseil. Un jour sans donnée est un trou, jamais un zéro.
  */
 @Composable
-fun WatchTrendsScreen(
-    onClose: () -> Unit,
-    viewModel: WatchTrendsViewModel = viewModel(
-        factory = healthyViewModelFactory { WatchTrendsViewModel(it.watchRepository, it.sessionSummary) },
-    ),
-) {
+internal fun WatchTrendsContent(viewModel: WatchTrendsViewModel, onConnect: () -> Unit) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val permissionLauncher = rememberLauncherForActivityResult(HealthConnectSource.permissionContract()) { viewModel.onResume() }
     LifecycleResumeEffect(Unit) {
         viewModel.onResume()
         onPauseOrDispose { }
     }
-    val connect = { permissionLauncher.launch(HealthConnectSource.PERMISSIONS) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text("Ma montre", style = MaterialTheme.typography.headlineMedium)
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         when {
             state.status == null && !state.hasHistory -> Text("Lecture de ta montre…", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            state.notConnected -> NotConnected(state.status, connect)
+            state.notConnected -> NotConnected(state.status, onConnect)
             else -> {
-                if (state.readingCut) ReadingCut(state.status, connect)
+                if (state.readingCut) ReadingCut(state.status, onConnect)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TrendRange.entries.forEach { range ->
                         FilterChip(selected = state.range == range, onClick = { viewModel.selectRange(range) }, label = { Text(range.label) })
                     }
                 }
-                Trends(state, connect)
+                Trends(state, onConnect)
             }
         }
-        TextButton(onClick = onClose) { Text("Retour") }
     }
 }
 
 @Composable
-private fun NotConnected(status: WatchStatus?, onConnect: () -> Unit) {
+internal fun NotConnected(status: WatchStatus?, onConnect: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             when (status) {
@@ -128,6 +103,17 @@ private fun Trends(state: WatchTrendsUiState, onAddExtras: () -> Unit) {
         Selected(state.today, selected, steps) { "${formatThousands(it.roundToInt())} pas" }
     }
 
+    // Distance (seulement si la montre en envoie : un bloc vide n'est pas montré)
+    val distance = series(days) { it.distanceM }.map { it?.div(1000.0) }
+    if (distance.any { it != null }) {
+        TrendBlock("Distance", WatchTrends.summary(distance, series(previous) { it.distanceM }.map { it?.div(1000.0) }), period) { summary ->
+            var selected by rememberSaveable(period) { mutableStateOf<Int?>(null) }
+            Summary("${km(summary.average!!)} par jour", summary.delta?.let { signedKm(it) }, period)
+            BarChart(distance, selected, { selected = it }, chartDescription(state.today, "Distance par jour", distance) { km(it) })
+            Selected(state.today, selected, distance) { km(it) }
+        }
+    }
+
     // Sommeil
     val sleep = series(days) { it.sleepMin }
     if (reading && !state.extrasGranted) {
@@ -136,12 +122,12 @@ private fun Trends(state: WatchTrendsUiState, onAddExtras: () -> Unit) {
         TrendBlock("Sommeil", WatchTrends.summary(sleep, series(previous) { it.sleepMin }), period) { summary ->
             var selected by rememberSaveable(period) { mutableStateOf<Int?>(null) }
             Summary(
-                "${durationText(summary.average!!.roundToInt())} par nuit",
+                "${hoursText(summary.average!!.roundToInt())} par nuit",
                 summary.delta?.let { signedMinutes(it.roundToInt()) },
                 period,
             )
-            BarChart(sleep, selected, { selected = it }, chartDescription(state.today, "Sommeil par nuit", sleep) { durationText(it.roundToInt()) })
-            Selected(state.today, selected, sleep) { durationText(it.roundToInt()) }
+            BarChart(sleep, selected, { selected = it }, chartDescription(state.today, "Sommeil par nuit", sleep) { hoursText(it.roundToInt()) })
+            Selected(state.today, selected, sleep) { hoursText(it.roundToInt()) }
         }
     }
 
@@ -208,7 +194,7 @@ private fun Trends(state: WatchTrendsUiState, onAddExtras: () -> Unit) {
                 Text("Aucune séance sur cette période.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 Text(
-                    "${state.sessions.count} séance${if (state.sessions.count > 1) "s" else ""} · ${durationText(state.sessions.minutes)} au total",
+                    "${state.sessions.count} séance${if (state.sessions.count > 1) "s" else ""} · ${hoursText(state.sessions.minutes)} au total",
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -284,7 +270,16 @@ internal fun signed(value: Int, unit: String): String = when {
 }
 
 internal fun signedMinutes(value: Int): String = when {
-    value > 0 -> "+${durationText(value)}"
-    value < 0 -> "−${durationText(abs(value))}"
+    value > 0 -> "+${hoursText(value)}"
+    value < 0 -> "−${hoursText(abs(value))}"
+    else -> "inchangé"
+}
+
+/** « 7,3 km » (virgule française, une décimale). */
+internal fun km(value: Double): String = "%.1f km".format(java.util.Locale.FRENCH, value)
+
+private fun signedKm(value: Double): String = when {
+    value > 0.049 -> "+" + km(value)
+    value < -0.049 -> "−" + km(abs(value))
     else -> "inchangé"
 }

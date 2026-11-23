@@ -6,6 +6,9 @@ import com.bidaboss.healthy.core.importformat.ImportParser
 import com.bidaboss.healthy.core.watch.SessionSummary
 import com.bidaboss.healthy.data.HealthyDatabase
 import com.bidaboss.healthy.data.RoomTransactionRunner
+import com.bidaboss.healthy.body.data.MeProgress
+import com.bidaboss.healthy.core.progress.WeeklyRecap
+import com.bidaboss.healthy.health.data.DayTotals
 import com.bidaboss.healthy.health.data.HealthConnectSource
 import com.bidaboss.healthy.health.data.WatchHistory
 import com.bidaboss.healthy.health.data.WatchIgnoredStore
@@ -28,7 +31,9 @@ import com.bidaboss.healthy.settings.data.PousseStageStore
 import com.bidaboss.healthy.settings.data.WaterReminderStore
 import com.bidaboss.healthy.settings.reminder.MotivationScheduler
 import com.bidaboss.healthy.settings.reminder.WaterReminderScheduler
+import com.bidaboss.healthy.today.data.HealthWeekRepository
 import com.bidaboss.healthy.today.data.MaintenanceRepository
+import com.bidaboss.healthy.today.data.MeProgressRepository
 import com.bidaboss.healthy.today.data.TodaySnapshotRepository
 import com.bidaboss.healthy.body.data.MaintenanceInfo
 import com.bidaboss.healthy.today.data.WeeklyRecapRepository
@@ -93,6 +98,18 @@ class AppContainer(context: Context) {
     val sessionSummary: (LocalDate, LocalDate) -> Flow<SessionSummary> = workoutLogRepository::observeSessionSummary
     val isWatchConnected: suspend () -> Boolean = { watchRepository.status() == WatchStatus.READY }
     val weeklyRecapRepository = WeeklyRecapRepository(mealRepository, bodyRepository, workoutLogRepository)
+    private val healthWeekRepository = HealthWeekRepository(mealRepository, bodyRepository, workoutLogRepository)
+
+    /** Les 7 jours de l'onglet Santé (repas, eau, sport) : `health` ne dépend pas des autres paquets. */
+    val healthWeek: (LocalDate) -> Flow<List<DayTotals>> = healthWeekRepository::observe
+
+    /** Bilan d'une semaine (lundi donné) pour l'onglet Santé. */
+    val weeklyRecap: suspend (LocalDate) -> WeeklyRecap = weeklyRecapRepository::recap
+
+    private val meProgressRepository = MeProgressRepository(mealRepository, workoutLogRepository)
+
+    /** Pousse et badges pour l'onglet Moi : `body` ne dépend pas de `today`. */
+    val meProgress: Flow<MeProgress> = meProgressRepository.observe()
     private val maintenanceRepository = MaintenanceRepository(mealRepository, bodyRepository)
     val maintenanceInfo: (LocalDate) -> Flow<MaintenanceInfo?> = maintenanceRepository::observe
     val todaySnapshotRepository = TodaySnapshotRepository(mealRepository, bodyRepository, workoutRepository, workoutLogRepository)

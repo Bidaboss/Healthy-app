@@ -11,13 +11,19 @@ import com.bidaboss.healthy.meals.data.HabitualMeals
 import com.bidaboss.healthy.meals.data.Meal
 import com.bidaboss.healthy.meals.data.MealDraft
 import com.bidaboss.healthy.meals.data.MealRepository
+import com.bidaboss.healthy.meals.data.SavedFoodRepository
+import com.bidaboss.healthy.meals.data.SharePortion
+import com.bidaboss.healthy.meals.data.FoodHistory
 import com.bidaboss.healthy.meals.data.defaultTypeFor
 import com.bidaboss.healthy.ui.parseNumber
 import com.bidaboss.healthy.ui.toInputText
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -78,6 +84,18 @@ fun FoodInput.withQuantity(text: String): FoodInput {
         fatG = scaled(ref.fatG, fatG),
         fiberG = scaled(ref.fiberG, fiberG),
     )
+}
+
+/**
+ * Boutons − et + de la quantité : 10 g de plus ou de moins (5 g sous 20 g), jamais moins de 1 g. Les calories et le
+ * reste suivent en proportion. Sans quantité lisible, rien ne bouge (on ne devine pas une quantité).
+ */
+fun FoodInput.stepped(direction: Int): FoodInput {
+    val quantity = parseNumber(quantityG)?.takeIf { it > 0 } ?: return this
+    val step = if (quantity < 20) 5.0 else 10.0
+    val next = (quantity + direction * step).coerceAtLeast(1.0)
+    val base = if (reference == null) rebased() else this
+    return base.withQuantity(next.toInputText())
 }
 
 /** Portions proposées en un geste dans l'éditeur (fil Nutrition, 12/11/2026). */
@@ -155,7 +173,19 @@ class MealEditorViewModel(
     mealId: Long?,
     initialDate: LocalDate,
     private val now: () -> LocalDateTime = { LocalDateTime.now() },
+    /** « Mes aliments » (marque-page) ; null dans les tests qui n'en ont pas besoin. */
+    private val savedFoods: SavedFoodRepository? = null,
 ) : ViewModel() {
+
+    /** Noms réduits des aliments déjà dans « Mes aliments » : le marque-page est plein pour eux. */
+    val savedKeys: StateFlow<Set<String>> = (savedFoods?.observeKeys() ?: flowOf(emptySet()))
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+
+    /** Marque-page d'une ligne : l'ajoute à « Mes aliments » avec ses valeurs actuelles, ou l'en retire. */
+    fun toggleSaved(input: FoodInput) {
+        val food = input.toFood(1, mutableListOf()) ?: return
+        viewModelScope.launch { savedFoods?.toggle(food) }
+    }
 
     /** Repas modifié ; null = nouvel enregistrement (nouveau repas ou copie). */
     private var mealId: Long? = mealId
@@ -227,11 +257,13 @@ class MealEditorViewModel(
     /** Repas prêt à partager (fichier d'import JSON), ou null. L'écran le remet à null une fois le partage ouvert. */
     val mealToShare: StateFlow<String?> = _mealToShare.asStateFlow()
 
-    /** « Partager ce repas » : la version enregistrée, en fichier qu'un proche peut importer. */
-    fun share() {
+    /** « Partager ce repas » : la version enregistrée, à la portion de l'autre personne, en fichier qu'un proche peut importer. */
+    fun share(portion: SharePortion) {
         val id = mealId ?: return
         viewModelScope.launch {
-            _mealToShare.value = mealRepository.shareMeal(id, UUID.randomUUID().toString(), now().atZone(ZoneId.systemDefault()).toOffsetDateTime())
+            _mealToShare.value = mealRepository.shareMeal(
+                id, UUID.randomUUID().toString(), now().atZone(ZoneId.systemDefault()).toOffsetDateTime(), portion,
+            )
         }
     }
 
@@ -258,21 +290,12 @@ class MealEditorViewModel(
     }
 
     /**
-     * Repas en calories seules (restaurant…) : un seul aliment, source manuelle, protéines, glucides, lipides et
-     * fibres **vides** (jamais estimés ni mis à zéro), avec la pastille « à vérifier ». Le moindre ajout de valeur
-     * à la main la retire (règle existante des aliments corrigés). Rend le message d'erreur, ou null si c'est fait.
+     * Repas en calories seules (restaurant…) : un seul aliment, voir [caloriesOnlyFood]. Rend le message d'erreur,
+     * ou null si c'est fait.
      */
     fun addCaloriesOnly(name: String, kcalText: String): String? {
-        val kcal = parseNumber(kcalText)
-        if (kcal == null || !kcal.isFinite() || kcal <= 0 || kcal > MAX_FOOD_VALUE) {
-            return "Indique un nombre de calories entre 1 et $MAX_FOOD_VALUE."
-        }
-        val food = Food(
-            name = name.trim().ifEmpty { CALORIES_ONLY_NAME },
-            kcal = kcal,
-            source = FoodSource.MANUAL,
-            confidence = Confidence.LOW,
-        )
+        val (food, error) = caloriesOnlyFood(name, kcalText)
+        if (food == null) return error
         addFoundFood(food)
         return null
     }
@@ -334,6 +357,28 @@ class MealEditorViewModel(
 
     private fun Food.toInput() = toInput(nextKey++)
 }
+
+/**
+ * Aliment « juste les calories » : source manuelle, protéines, glucides, lipides et fibres **vides** (jamais estimés
+ * ni mis à zéro), avec la pastille « à vérifier » (le moindre ajout de valeur à la main la retire). Rend l'aliment,
+ * ou le message d'erreur.
+ */
+internal fun caloriesOnlyFood(name: String, kcalText: String): Pair<Food?, String?> {
+    val kcal = parseNumber(kcalText)
+    if (kcal == null || !kcal.isFinite() || kcal <= 0 || kcal > MAX_FOOD_VALUE) {
+        return null to "Indique un nombre de calories entre 1 et $MAX_FOOD_VALUE."
+    }
+    val food = Food(
+        name = name.trim().ifEmpty { CALORIES_ONLY_NAME },
+        kcal = kcal,
+        source = FoodSource.MANUAL,
+        confidence = Confidence.LOW,
+    )
+    return food to null
+}
+
+/** Nom d'un aliment pour comparer avec « Mes aliments » (minuscules, sans accents). */
+internal fun savedKeyOf(name: String): String = FoodHistory.normalize(name)
 
 /** Nom proposé pour un repas noté en calories seules. */
 internal const val CALORIES_ONLY_NAME = "Repas au restaurant"

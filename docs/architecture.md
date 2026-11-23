@@ -98,6 +98,15 @@ dans les assets (`format/`) à chaque build, pour que l'app et le document ne di
   `isWatchConnected`. Graphiques dessinés en Compose (`WatchCharts.kt`), sans bibliothèque.
 - Le manifeste déclare l'écran de confidentialité (`WatchPrivacyActivity`) exigé par Health Connect.
 
+## Repas : Mes aliments, import et partage
+
+- « Mes aliments » : table `saved_foods` (`meals/data/SavedFoodEntities.kt`, base v15, dans la sauvegarde), un aliment
+  par nom réduit (`name_key`, calculé par `FoodHistory.normalize`). `SavedFoodRepository` l'expose en modèles simples ;
+  les repas ne le lisent jamais (un aliment ajouté à un repas est une copie).
+- La carte « Importer un repas de mon IA » est dans `importexport/ui` (`ImportMealCard`) et réutilise `ImportViewModel` ;
+  `ui/HealthyApp.kt` la passe à `MealsScreen` comme composable, pour que `meals` ne dépende pas de `importexport`.
+- Partager un repas : `MealRepository.shareMeal` (portion `SharePortion`), envoyé en fichier par `shareFile`.
+
 ## Maintien et tableau de bord
 
 - Les calculs sont dans `:core` (`Maintenance`, testé par `MaintenanceTest`) : Mifflin-St Jeor × niveau

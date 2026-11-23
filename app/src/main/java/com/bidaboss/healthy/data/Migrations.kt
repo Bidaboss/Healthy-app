@@ -212,8 +212,21 @@ object Migrations {
         }
     }
 
+    /** v15 : « Mes aliments » (favoris d'aliments, un par nom). */
+    val MIGRATION_14_15 = object : Migration(14, 15) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `saved_foods` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, " +
+                    "`name_key` TEXT NOT NULL, `default_portion_g` REAL, `kcal` REAL NOT NULL, `protein_g` REAL, `carbs_g` REAL, " +
+                    "`fat_g` REAL, `fiber_g` REAL, `source` TEXT NOT NULL, `drink` TEXT, `created_at_epoch_ms` INTEGER NOT NULL)",
+            )
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_saved_foods_name_key` ON `saved_foods` (`name_key`)")
+        }
+    }
+
     val ALL = arrayOf(
         MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8,
         MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14,
+        MIGRATION_14_15,
     )
 }

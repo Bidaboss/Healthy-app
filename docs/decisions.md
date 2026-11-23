@@ -460,9 +460,34 @@ Cette section est tenue à jour par chaque lot, dans son emplacement.
   fournit pas. Les séances à ajouter au journal restent proposées dans la carte.
 - Aucune table, aucune migration.
 
-### Lot 2 : Repas
+### Lot 2 : Repas (livré, base v15)
 
-(à remplir par le lot 2)
+- **Onglet Repas** : fond photo (`PhotoBackground`), jour et total sur la photo, puis la carte
+  « Importer un repas de mon IA », les boissons en un geste (aujourd'hui), les repas du jour. Un seul bouton
+  **Ajouter** ouvre la feuille.
+- **Importer un repas de mon IA** (carte en tête, même entrée dans la feuille) : Coller (presse-papiers) ou Choisir
+  un fichier, aperçu du repas reconnu (plats, calories, macros), « Ajouter au journal ». C'est le moteur de l'écran
+  Importer (`ImportViewModel`) : un fichier qui n'est pas un repas, ou refusé, s'ouvre dans cet écran. Format
+  d'import inchangé.
+- **Feuille Ajouter** : Importer depuis mon IA, Scanner un code-barres, Chercher un aliment (Open Food Facts),
+  Saisie rapide (juste les calories), Déjà mangés, Mes aliments, Créer un aliment, Mes plats, et Composer un repas
+  (type, heure et aliments au choix). Les ajouts en un geste vont au repas en cours (règle des boissons : repas du type
+  de l'heure commencé il y a moins de 3 h, sinon un nouveau repas) avec « Annuler ». Sur un autre jour qu'aujourd'hui,
+  la feuille ne propose que Composer un repas, Importer et Créer un aliment.
+- **Modifier le repas** (un appui sur un repas) : type, heure, quantités avec − et + (10 g, 5 g sous 20 g, jamais
+  moins de 1 g ; les calories et macros suivent en proportion), « + Ajouter un aliment » (Mes aliments, scan,
+  recherche, saisie rapide, Mes plats, à la main), total, Enregistrer, Supprimer, Refaire ce repas, Partager.
+- **Mes aliments** : table `saved_foods` (nom, portion par défaut, calories et macros de cette portion, source,
+  boisson ou alcool). Un seul aliment par nom (comparé sans accents ni majuscules). **Marque-page** sur chaque
+  aliment d'un repas : l'ajoute (sa quantité devient la portion par défaut) ou le retire. Distinct de **Mes plats**
+  (recettes) et de **Mes produits scannés** (accessible depuis Mes aliments). Un repas déjà noté ne change jamais
+  quand on corrige ou supprime un aliment. Inclus dans la sauvegarde.
+- **Partager ce repas** : icône sur chaque repas et bouton dans Modifier le repas. La portion de l'autre personne
+  (Pareil, La moitié, Un tiers, Autre en pourcentage de 1 à 100) multiplie quantités, calories et macros ; une portion
+  écrite (« 1 part ») est retirée si la portion n'est pas « Pareil ». Envoi par le partage Android d'un **fichier** au
+  format d'import existant (`repas-healthy-AAAA-MM-JJ.json`, nouvel `id`, sans `replaces`) ; l'autre l'ouvre dans son
+  app Healthy (ouvrir avec, partager vers) et le repas s'ajoute à son journal. Sans compte.
+- Migration 14 vers 15 (`MIGRATION_14_15`, testée dans `MigrationTest`).
 
 ### Lot 3 : Sport et trajets
 

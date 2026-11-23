@@ -208,10 +208,19 @@ class MealRepository(
 
     /**
      * « Partager ce repas » : le repas enregistré en fichier d'import `meal` (nouvel [id], sans `replaces`),
-     * qu'un proche importe tel quel. null si le repas n'existe plus.
+     * qu'un proche importe tel quel. [portion] est la part de l'autre personne : quantités, calories et macros
+     * sont multipliées d'autant (une portion écrite en texte, « 1 part », n'est plus vraie et part avec).
+     * null si le repas n'existe plus.
      */
-    suspend fun shareMeal(mealId: Long, id: String, createdAt: OffsetDateTime): String? {
+    suspend fun shareMeal(
+        mealId: Long,
+        id: String,
+        createdAt: OffsetDateTime,
+        portion: SharePortion = SharePortion.Same,
+    ): String? {
         val meal = getMeal(mealId) ?: return null
+        val factor = portion.factor
+        fun scaled(value: Double?): Double? = if (factor == 1.0) value else value?.let { Math.round(it * factor * 10) / 10.0 }
         val imported = ImportedMeal(
             eatenAt = meal.eatenAt.atZone(zone()).toOffsetDateTime(),
             type = meal.type,
@@ -219,8 +228,19 @@ class MealRepository(
             notes = meal.notes,
             items = meal.foods.map {
                 ImportedFood(
-                    it.name, it.quantityG, it.portion, it.kcal, it.proteinG, it.carbsG, it.fatG, it.fiberG,
-                    it.source, it.confidence, it.assumptions, it.offCode, it.drink,
+                    name = it.name,
+                    quantityG = scaled(it.quantityG),
+                    portion = if (factor == 1.0) it.portion else null,
+                    kcal = scaled(it.kcal) ?: 0.0,
+                    proteinG = scaled(it.proteinG),
+                    carbsG = scaled(it.carbsG),
+                    fatG = scaled(it.fatG),
+                    fiberG = scaled(it.fiberG),
+                    source = it.source,
+                    confidence = it.confidence,
+                    assumptions = it.assumptions,
+                    offCode = it.offCode,
+                    drink = it.drink,
                 )
             },
         )

@@ -8,6 +8,8 @@ import com.bidaboss.healthy.meals.data.Drink
 import com.bidaboss.healthy.meals.data.Food
 import com.bidaboss.healthy.meals.data.Meal
 import com.bidaboss.healthy.meals.data.MealRepository
+import com.bidaboss.healthy.meals.data.SavedFoodRepository
+import com.bidaboss.healthy.meals.data.SharePortion
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,10 +18,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.UUID
 
 data class MealsUiState(
@@ -42,9 +46,37 @@ class MealsViewModel(
     maintenanceKcal: (LocalDate) -> Flow<Int?>,
     /** Bilan repas (fourni par AppContainer : il lit aussi l'eau et le profil). */
     private val exportMealReport: suspend (today: LocalDate, id: String, now: LocalDateTime) -> String,
+    /** « Mes aliments » (marque-page des aliments d'un repas) ; null dans les tests qui n'en ont pas besoin. */
+    private val savedFoods: SavedFoodRepository? = null,
     private val today: () -> LocalDate = { LocalDate.now() },
     private val now: () -> LocalDateTime = { LocalDateTime.now() },
 ) : ViewModel() {
+
+    /** Noms réduits des aliments déjà dans « Mes aliments » : le marque-page est plein pour eux. */
+    val savedKeys: StateFlow<Set<String>> = (savedFoods?.observeKeys() ?: flowOf(emptySet()))
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+
+    fun toggleSaved(food: Food) {
+        viewModelScope.launch { savedFoods?.toggle(food) }
+    }
+
+    private val _mealToShare = MutableStateFlow<String?>(null)
+
+    /** Repas prêt à partager (fichier d'import JSON à la portion choisie), ou null. L'écran le remet à null une fois le partage ouvert. */
+    val mealToShare: StateFlow<String?> = _mealToShare.asStateFlow()
+
+    /** « Partager ce repas » : la portion de l'autre personne, en fichier qu'il importe dans son app. */
+    fun shareMeal(meal: Meal, portion: SharePortion) {
+        viewModelScope.launch {
+            _mealToShare.value = mealRepository.shareMeal(
+                meal.id, UUID.randomUUID().toString(), now().atZone(ZoneId.systemDefault()).toOffsetDateTime(), portion,
+            )
+        }
+    }
+
+    fun onMealShared() {
+        _mealToShare.value = null
+    }
 
     private val _reportToShare = MutableStateFlow<String?>(null)
 
@@ -106,9 +138,17 @@ class MealsViewModel(
     /** Dernier aliment scanné ajouté en un geste : l'écran le confirme (« Ajouté au déjeuner ») avec « Annuler ». */
     val lastAdded: StateFlow<AddedFood?> = _lastAdded.asStateFlow()
 
-    /** Produit scanné depuis l'onglet : au repas en cours, sinon un nouveau repas du type de l'heure. */
-    fun addScannedFood(food: Food) {
+    /** Aliment ajouté en un geste (scan, recherche, favori…) : au repas en cours, sinon un nouveau repas du type de l'heure. */
+    fun addFood(food: Food) {
         viewModelScope.launch { _lastAdded.value = mealRepository.addFoodToCurrentMeal(food, now()) }
+    }
+
+    /** « Saisie rapide » : juste les calories. Rend le message d'erreur, ou null si c'est ajouté. */
+    fun addCaloriesOnly(name: String, kcalText: String): String? {
+        val (food, error) = caloriesOnlyFood(name, kcalText)
+        if (food == null) return error
+        addFood(food)
+        return null
     }
 
     fun undoLastAdded() {

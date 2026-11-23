@@ -1,29 +1,25 @@
 package com.bidaboss.healthy.today.ui
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.size
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.bidaboss.healthy.ui.WaterFeedback
-import kotlin.math.roundToInt
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.semantics.Role
+import com.bidaboss.healthy.ui.Glyphs
+import com.bidaboss.healthy.ui.SvgIcon
+import com.bidaboss.healthy.ui.theme.healthyTonalColors
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,13 +31,12 @@ import androidx.compose.ui.unit.dp
 import com.bidaboss.healthy.body.data.MealDrink
 import com.bidaboss.healthy.body.data.WaterIntake
 import com.bidaboss.healthy.core.body.Hydration
-import com.bidaboss.healthy.ui.theme.healthyTonalButtonColors
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-/** Carte « Eau » d'Aujourd'hui : progression et ajouts rapides. */
+/** Carte « Eau » d'Aujourd'hui, allégée comme le prototype : titre et total, barre, quatre boutons à icône. */
 @Composable
 fun WaterCard(state: WaterUiState, onAdd: (Int) -> Unit, onUndo: () -> Unit, onOpen: () -> Unit) {
     val context = LocalContext.current
@@ -51,25 +46,28 @@ fun WaterCard(state: WaterUiState, onAdd: (Int) -> Unit, onUndo: () -> Unit, onO
         onAdd(ml)
     }
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Eau", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                TextButton(onClick = onOpen) { Text("Détails") }
-            }
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             val target = state.targetMl
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                WaterGlass(state.todayMl.toFloat() / (target ?: Hydration.MIN_ML))
+            // Toucher le titre ouvre le détail de l'eau.
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                modifier = Modifier.fillMaxWidth().clickable(onClickLabel = "Voir le détail de l'eau", onClick = onOpen),
+            ) {
+                Text("Eau", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                 Text(
                     Hydration.formatLiters(state.todayMl) + (target?.let { " sur ${Hydration.formatLiters(it)}" }.orEmpty()),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.tertiary,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             if (target != null) {
                 LinearProgressIndicator(
                     progress = { (state.todayMl.toFloat() / target).coerceIn(0f, 1f) },
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.fillMaxWidth().height(10.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    strokeCap = StrokeCap.Round,
+                    drawStopIndicator = {},
                 )
                 if (state.sessionsToday > 0) {
                     Text(
@@ -79,70 +77,47 @@ fun WaterCard(state: WaterUiState, onAdd: (Int) -> Unit, onUndo: () -> Unit, onO
                     )
                 }
             }
-            // Pour savoir si le verre qu'on a sous les yeux est déjà noté (demande du propriétaire, 13/11/2026).
+            // Quatre boutons de même largeur : un appui ajoute la quantité.
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                DrinkButton("Verre", Hydration.GLASS_ML, Glyphs.GLASS, add, Modifier.weight(1f))
+                DrinkButton("Café", Hydration.COFFEE_ML, Glyphs.COFFEE, add, Modifier.weight(1f))
+                DrinkButton("Thé", Hydration.TEA_ML, Glyphs.TEA, add, Modifier.weight(1f))
+                DrinkButton("Bouteille", Hydration.BOTTLE_ML, Glyphs.BOTTLE, add, Modifier.weight(1f))
+            }
+            Text(
+                "Café, thé et boissons sans alcool comptent dans l'eau du jour.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            // « Annuler » reste à portée de main ; il dit aussi quel est le dernier ajout (le verre sous les yeux
+            // est-il déjà noté ? demande du 13/11/2026).
             state.todayIntakes.firstOrNull()?.let { last ->
-                val count = state.todayIntakes.size
-                Text(
-                    "Dernier ajout : ${intakeText(last)} à ${intakeTime(last)}" +
-                        if (count > 1) " · $count ajouts aujourd'hui" else "",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                TextButton(onClick = onUndo, modifier = Modifier.align(Alignment.End)) {
+                    Text("Annuler : ${intakeText(last)} à ${intakeTime(last)}")
+                }
             }
-            // Quatre boutons de même largeur : un appui ajoute la quantité (refonte d'Aujourd'hui, 23/11/2026).
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                DrinkButton("Verre", Hydration.GLASS_ML, add, Modifier.weight(1f))
-                DrinkButton("Café", Hydration.COFFEE_ML, add, Modifier.weight(1f))
-                DrinkButton("Thé", Hydration.TEA_ML, add, Modifier.weight(1f))
-                DrinkButton("Bouteille", Hydration.BOTTLE_ML, add, Modifier.weight(1f))
-            }
-            if (state.todayIntakes.isNotEmpty()) TextButton(onClick = onUndo) { Text("Annuler le dernier ajout") }
         }
     }
 }
 
-/** Un bouton d'ajout rapide : le nom au-dessus, la quantité dessous. */
+/** Un bouton d'ajout rapide : icône, nom, quantité (« + 20 cL »). */
 @Composable
-private fun DrinkButton(name: String, ml: Int, onAdd: (Int) -> Unit, modifier: Modifier = Modifier) {
+private fun DrinkButton(name: String, ml: Int, glyph: String, onAdd: (Int) -> Unit, modifier: Modifier = Modifier) {
+    val tonal = healthyTonalColors()
     val amount = Hydration.formatLiters(ml)
-    FilledTonalButton(
-        colors = healthyTonalButtonColors(),
-        onClick = { onAdd(ml) },
-        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
-        modifier = modifier.semantics { contentDescription = "Ajouter $name $amount" },
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(18.dp))
+            .background(tonal.container)
+            .clickable(role = Role.Button) { onAdd(ml) }
+            .semantics { contentDescription = "Ajouter $name $amount" }
+            .padding(horizontal = 2.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(1.dp),
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(name, style = MaterialTheme.typography.labelLarge, maxLines = 1)
-            Text(amount, style = MaterialTheme.typography.labelSmall, maxLines = 1)
-        }
-    }
-}
-
-/** Verre qui se remplit en douceur à chaque ajout ; il reste plein une fois l'objectif atteint. */
-@Composable
-private fun WaterGlass(fraction: Float) {
-    val level by animateFloatAsState(
-        targetValue = fraction.coerceIn(0f, 1f),
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
-        label = "verre",
-    )
-    val water = MaterialTheme.colorScheme.tertiary
-    val outline = MaterialTheme.colorScheme.onSurfaceVariant
-    Canvas(Modifier.size(width = 32.dp, height = 42.dp).semantics { contentDescription = "Verre rempli à ${(level * 100).roundToInt()} %" }) {
-        val inset = size.width * 0.14f
-        // Verre légèrement évasé : plus large en haut qu'en bas.
-        fun glass() = Path().apply {
-            moveTo(0f, 0f)
-            lineTo(size.width, 0f)
-            lineTo(size.width - inset, size.height)
-            lineTo(inset, size.height)
-            close()
-        }
-        clipPath(glass()) {
-            val top = size.height * (1f - level)
-            drawRect(water.copy(alpha = 0.85f), topLeft = Offset(0f, top), size = Size(size.width, size.height - top))
-        }
-        drawPath(glass(), outline, style = Stroke(width = 2.dp.toPx()))
+        SvgIcon(glyph, tonal.content, size = 22.dp)
+        Text(name, style = MaterialTheme.typography.labelLarge, color = tonal.content, maxLines = 1)
+        Text("+ ${ml / 10} cL", style = MaterialTheme.typography.labelSmall, color = tonal.content, maxLines = 1)
     }
 }
 

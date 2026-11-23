@@ -250,7 +250,6 @@ private fun MainNavigation(
                         navController.navigate(Routes.sessionRun(sessionId, durationMin))
                     },
                     onOpenProfile = { navController.navigate(Routes.PROFILE) { launchSingleTop = true } },
-                    onOpenWeight = { navController.navigate(Routes.WEIGHT) { launchSingleTop = true } },
                     onOpenWater = { navController.navigate(Routes.WATER) { launchSingleTop = true } },
                     onOpenBadges = { navController.navigate(Routes.BADGES) { launchSingleTop = true } },
                     onOpenWeeklyRecap = { navController.navigate(Routes.WEEKLY_RECAP) { launchSingleTop = true } },

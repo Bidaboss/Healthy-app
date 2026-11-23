@@ -112,7 +112,11 @@ fun MealsScreen(
     ),
     savedFoodsViewModel: SavedFoodsViewModel = viewModel(factory = healthyViewModelFactory { SavedFoodsViewModel(it.savedFoodRepository) }),
     recipesViewModel: RecipesViewModel = viewModel(factory = healthyViewModelFactory { RecipesViewModel(it.recipeRepository) }),
+    habitViewModel: HabitViewModel = viewModel(
+        factory = healthyViewModelFactory { HabitViewModel(it.mealRepository, it.habitDismissStore) },
+    ),
 ) {
+    val habit by habitViewModel.uiState.collectAsStateWithLifecycle()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val savedKeys by viewModel.savedKeys.collectAsStateWithLifecycle()
     val savedFoods by savedFoodsViewModel.foods.collectAsStateWithLifecycle()
@@ -120,6 +124,7 @@ fun MealsScreen(
 
     LifecycleResumeEffect(Unit) {
         viewModel.onResume()
+        habitViewModel.onResume()
         onPauseOrDispose { }
     }
 
@@ -229,6 +234,14 @@ fun MealsScreen(
             }
             item(key = "import") {
                 Box(Modifier.padding(horizontal = 16.dp)) { importCard() }
+            }
+            // « Ton petit-déjeuner habituel ? » (carte qui était sur Aujourd'hui avant la refonte) : seulement le jour même.
+            if (state.isToday && habit.suggestion != null) {
+                item(key = "habit") {
+                    Box(Modifier.padding(horizontal = 16.dp)) {
+                        HabitCard(habit.suggestion, onAdd = habitViewModel::add, onDismiss = habitViewModel::dismiss)
+                    }
+                }
             }
             if (state.caloriesOnlyMeals > 0) {
                 item(key = "calories-only") {

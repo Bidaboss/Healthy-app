@@ -1,6 +1,15 @@
 package com.bidaboss.healthy.today.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import com.bidaboss.healthy.ui.Glyphs
+import com.bidaboss.healthy.ui.SvgIcon
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,7 +38,10 @@ fun WatchCard(state: WatchUiState, onAdd: (WatchSession) -> Unit, onIgnore: (Wat
     if (!state.visible) return
     Card(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Ma montre", style = MaterialTheme.typography.titleMedium)
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 4.dp)) {
+                Text("Ma montre", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                Text("Voir tout", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            }
             val day = state.day
             when {
                 day == null -> Text(
@@ -42,13 +54,18 @@ fun WatchCard(state: WatchUiState, onAdd: (WatchSession) -> Unit, onIgnore: (Wat
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
-                else -> Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                else -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Quatre tuiles en grille 2 x 2, chacune avec sa pastille d'icône colorée (prototype).
                     // Calories actives : indicatives, elles ne s'ajoutent pas à l'objectif (docs/decisions.md).
-                    WatchStat("Calories", day.activeKcal?.let { formatThousands(it) }, "kcal", Modifier.weight(1f))
-                    WatchStat("Pas", formatThousands(day.steps.toInt()), null, Modifier.weight(1f))
-                    // Distance du jour (lot 4) : « – » si la montre n'en envoie pas ou si elle n'est pas autorisée.
-                    WatchStat("Distance", day.distanceM?.let { "%.1f".format(java.util.Locale.FRENCH, it / 1000.0) }, "km", Modifier.weight(1f))
-                    WatchStat("Cœur", day.avgBpm?.toString(), "bpm", Modifier.weight(1f))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        WatchTile("Calories", day.activeKcal?.let { formatThousands(it) }, "kcal", Glyphs.FLAME, Color(0xFFF07A4A), Modifier.weight(1f))
+                        WatchTile("Pas", formatThousands(day.steps.toInt()), null, Glyphs.SHOE, Color(0xFF3F7CE0), Modifier.weight(1f))
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // Distance du jour (lot 4) : « – » si la montre n'en envoie pas ou si elle n'est pas autorisée.
+                        WatchTile("Distance", day.distanceM?.let { "%.1f".format(java.util.Locale.FRENCH, it / 1000.0) }, "km", Glyphs.ROUTE, Color(0xFF2FA37A), Modifier.weight(1f))
+                        WatchTile("Cœur", day.avgBpm?.toString(), "bpm", Glyphs.HEART, Color(0xFFE0566B), Modifier.weight(1f))
+                    }
                 }
             }
             if (state.proposals.isNotEmpty()) {
@@ -61,22 +78,34 @@ fun WatchCard(state: WatchUiState, onAdd: (WatchSession) -> Unit, onIgnore: (Wat
     }
 }
 
-/** Une mesure de la montre : valeur en gros, nom dessous ; « – » quand elle manque. */
+/** Une mesure de la montre : pastille d'icône colorée, nom, valeur en gros ; « – » quand elle manque. */
 @Composable
-private fun WatchStat(label: String, value: String?, unit: String?, modifier: Modifier = Modifier) {
-    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            value ?: "–",
-            style = MaterialTheme.typography.titleLarge,
-            color = if (value == null) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
-            maxLines = 1,
-        )
-        Text(
-            if (value != null && unit != null) "$label ($unit)" else label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-        )
+private fun WatchTile(label: String, value: String?, unit: String?, glyph: String, badge: Color, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.background)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(Modifier.size(34.dp).clip(CircleShape).background(badge), contentAlignment = Alignment.Center) {
+            SvgIcon(glyph, Color.White, size = 18.dp, strokeWidth = 2.4f)
+        }
+        Column {
+            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    value ?: "–",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = if (value == null) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                )
+                if (value != null && unit != null) {
+                    Text(unit, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 3.dp))
+                }
+            }
+        }
     }
 }
 

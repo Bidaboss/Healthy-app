@@ -16,7 +16,7 @@ import java.time.LocalDate
 /** null tant que ça charge ou sans profil. */
 data class MaintenanceUiState(val info: MaintenanceInfo? = null)
 
-/** Maintien réel : la carte d'Aujourd'hui et la section « Mon maintien » du profil. */
+/** Maintien réel : la carte de Moi et la section « Mon maintien » du profil. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class MaintenanceViewModel(
     observe: (LocalDate) -> kotlinx.coroutines.flow.Flow<MaintenanceInfo?>,

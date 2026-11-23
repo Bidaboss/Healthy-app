@@ -46,6 +46,8 @@ import com.bidaboss.healthy.body.ui.MaintenanceCard
 import com.bidaboss.healthy.body.ui.MaintenanceViewModel
 import com.bidaboss.healthy.core.body.Maintenance
 import com.bidaboss.healthy.ui.EmptyState
+import com.bidaboss.healthy.ui.PhotoBackground
+import com.bidaboss.healthy.ui.PhotoTab
 import com.bidaboss.healthy.ui.ThemeTexts
 import com.bidaboss.healthy.ui.bandLabel
 import com.bidaboss.healthy.ui.color
@@ -121,62 +123,29 @@ fun TodayScreen(
         }
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-    ) {
-        TodayHeader(header, onOpenBadges)
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            if (recapWeek != null) WeeklyRecapCard(onOpenWeeklyRecap)
-            CaloriesCard(state, onOpenProfile)
+    // Fond photo de l'onglet : il défile avec les cartes (refonte, lot 1).
+    Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        PhotoBackground(PhotoTab.TODAY) {
+            Column {
+                TodayHeader(header, onOpenBadges)
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    // Ordre voulu : calories, eau, ma montre, séance du jour, bilan de la semaine.
+                    CaloriesCard(state, onOpenProfile)
+                    WaterCard(water, onAdd = waterViewModel::add, onUndo = waterViewModel::undo, onOpen = onOpenWater)
+                    WatchCard(watch, onAdd = watchViewModel::add, onIgnore = watchViewModel::ignore, onOpen = onOpenWatch)
+                    TodaySessionCard(state, onStart = { choosingDuration = true })
+                    if (recapWeek != null) WeeklyRecapCard(onOpenWeeklyRecap)
 
-            MaintenanceCard(maintenance.info, onOpenDetail = onOpenProfile, onLater = maintenanceViewModel::later)
-
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Séance du jour", style = MaterialTheme.typography.titleMedium)
-                    val session = state.todaySession
-                    // Ce qui a été ajouté à la main dans Sport (kiné, marche…) compte aussi pour la journée.
-                    state.todayActivities.forEach { activity ->
-                        Text(
-                            "✓ ${activity.type} · ${activity.durationMin} min" +
-                                activity.bodyParts.takeIf { it.isNotEmpty() }
-                                    ?.joinToString(", ", prefix = " · ") { it.label.lowercase() }.orEmpty(),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                    if (session == null) {
-                        if (state.todayActivities.isEmpty()) EmptyState(ThemeTexts.current.restDay, size = 72.dp)
-                    } else {
-                        Text(session.title, style = MaterialTheme.typography.titleLarge)
-                        Text(session.variants.joinToString(" / ") { "${it.durationMin} min" })
-                        Button(
-                            onClick = { choosingDuration = true },
-                            enabled = session.variants.isNotEmpty(),
-                            modifier = Modifier.fillMaxWidth().height(52.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = HealthyTheme.ambiance.accent,
-                                contentColor = HealthyTheme.ambiance.onAccent,
-                            ),
-                        ) { Text("Commencer la séance", fontWeight = FontWeight.Black) }
-                    }
+                    // Cartes d'avant la refonte : le lot 4 les met dans Santé (7 jours) et Moi (poids).
+                    MaintenanceCard(maintenance.info, onOpenDetail = onOpenProfile, onLater = maintenanceViewModel::later)
+                    HabitCard(habit.suggestion, onAdd = habitViewModel::add, onDismiss = habitViewModel::dismiss)
+                    if (state.maintenanceKcal != null) WeekCard(state)
+                    WeightCard(state, onOpenWeight)
                 }
             }
-
-            HabitCard(habit.suggestion, onAdd = habitViewModel::add, onDismiss = habitViewModel::dismiss)
-
-            WaterCard(water, onAdd = waterViewModel::add, onUndo = waterViewModel::undo, onOpen = onOpenWater)
-
-            WatchCard(watch, onAdd = watchViewModel::add, onIgnore = watchViewModel::ignore, onOpen = onOpenWatch)
-
-            if (state.maintenanceKcal != null) WeekCard(state)
-
-            WeightCard(state, onOpenWeight)
         }
     }
 
@@ -190,6 +159,42 @@ fun TodayScreen(
             },
             onDismiss = { choosingDuration = false },
         )
+    }
+}
+
+/** Séance du jour : ce qui est prévu, ce qui est déjà fait (activités du journal) et « Commencer ». */
+@Composable
+private fun TodaySessionCard(state: TodayUiState, onStart: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("Séance du jour", style = MaterialTheme.typography.titleMedium)
+            val session = state.todaySession
+            // Ce qui a été ajouté à la main dans Sport (kiné, marche…) compte aussi pour la journée.
+            state.todayActivities.forEach { activity ->
+                Text(
+                    "✓ ${activity.type} · ${activity.durationMin} min" +
+                        activity.bodyParts.takeIf { it.isNotEmpty() }
+                            ?.joinToString(", ", prefix = " · ") { it.label.lowercase() }.orEmpty(),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+            if (session == null) {
+                if (state.todayActivities.isEmpty()) EmptyState(ThemeTexts.current.restDay, size = 72.dp)
+            } else {
+                Text(session.title, style = MaterialTheme.typography.titleLarge)
+                Text(session.variants.joinToString(" / ") { "${it.durationMin} min" })
+                Button(
+                    onClick = onStart,
+                    enabled = session.variants.isNotEmpty(),
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = HealthyTheme.ambiance.accent,
+                        contentColor = HealthyTheme.ambiance.onAccent,
+                    ),
+                ) { Text("Commencer la séance", fontWeight = FontWeight.Black) }
+            }
+        }
     }
 }
 

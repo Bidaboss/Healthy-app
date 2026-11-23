@@ -165,9 +165,10 @@ Validées par le propriétaire avec le fil Design (13/11/2026), ordre conseillé
   de référence, bornée entre 1,5 et 3 L, puis + 0,5 L par séance enregistrée dans la journée.
   Affiché en cL sous 1 L (un verre : 20 cL), sinon en litres à 0,01 L près (ex. femme de 60 kg : 1,7 L ;
   homme de 80 kg : 2,2 L ; 1,75 L).
-- Saisie : « + verre 20 cL », « + café 12 cL » (café de machine automatique d'entreprise),
-  « + petite tasse 15 cL », « + grande tasse 25 cL » (petit-déjeuner, demande du propriétaire du 13/11/2026),
-  « + bouteille 50 cL », une quantité libre, et l'annulation du dernier ajout.
+- Saisie (refonte, 23/11/2026) : quatre boutons, un appui ajoute : Verre 20 cL, Café 15 cL, Thé 25 cL,
+  Bouteille 50 cL ; une quantité libre dans l'écran Eau, et l'annulation du dernier ajout. Les anciens boutons
+  « petite tasse » et « grande tasse » ont disparu : un ajout déjà noté de 15 cL ou 25 cL s'affiche maintenant
+  « Café » ou « Thé », et l'ancien café de 12 cL garde son nom.
 - Historique du jour (demande du propriétaire, 13/11/2026, pour savoir si un verre est déjà noté) : la carte
   Eau affiche le dernier ajout et son heure ; l'écran Eau liste les ajouts du jour (heure, nom du bouton
   ou quantité) et chacun peut être supprimé ; un message « Ajout supprimé » propose « Annuler » (l'ajout
@@ -436,9 +437,21 @@ Cette section est tenue à jour par chaque lot, dans son emplacement.
   Mon poids, Mes badges) que le lot 4 remplit.
 - Aucune table, aucune migration.
 
-### Lot 1 : Aujourd'hui
+### Lot 1 : Aujourd'hui (livré)
 
-(à remplir par le lot 1)
+- **Fond photo** de l'onglet (`PhotoBackground(PhotoTab.TODAY)`) : Pousse, le bonjour et la série sont posés
+  dessus en blanc avec ombre douce, les cartes sont opaques à coins de 28 dp.
+- **Ordre des cartes** : calories (anneau neutre le jour en cours, 4 barres de macros), Eau, Ma montre (si
+  montre connectée), Séance du jour, bilan de la semaine (carte « prêt » du dimanche soir au mardi ; il s'ouvre
+  aussi tout seul le lundi). Les cartes d'avant la refonte (maintien, repas habituel, 7 derniers jours, Mon
+  poids) restent en dessous jusqu'au lot 4, qui les met dans Santé et Moi.
+- **Eau** : 4 boutons de même largeur (Verre 20 cL, Café 15 cL, Thé 25 cL, Bouteille 50 cL), un appui ajoute,
+  avec la vibration et le verre animé déjà prévus. Le café, le thé et les boissons sans alcool des repas comptent
+  dans l'eau (règle `drink`, voir « Eau »). Le café du widget passe aussi à 15 cL.
+- **Ma montre** : calories brûlées, pas, distance et cœur moyen en quatre mesures ; un appui ouvre l'écran Ma
+  montre (Santé). La carte est masquée sans montre connectée. La distance affiche « – » tant que le lot 4 ne la
+  fournit pas. Les séances à ajouter au journal restent proposées dans la carte.
+- Aucune table, aucune migration.
 
 ### Lot 2 : Repas
 

@@ -30,11 +30,6 @@ fun WatchCard(state: WatchUiState, onAdd: (WatchSession) -> Unit, onIgnore: (Wat
     Card(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Ma montre", style = MaterialTheme.typography.titleMedium)
-            Text(
-                "Touche pour voir tes tendances.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
             val day = state.day
             when {
                 day == null -> Text(
@@ -47,30 +42,14 @@ fun WatchCard(state: WatchUiState, onAdd: (WatchSession) -> Unit, onIgnore: (Wat
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
-                else -> {
-                    Text(
-                        "${formatThousands(day.steps.toInt())} pas",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    // Indicatif : le sport n'ajoute pas de calories à l'objectif (docs/decisions.md).
-                    day.activeKcal?.let {
-                        Text(
-                            "≈ ${formatThousands(it)} kcal actives, à titre indicatif : elles ne s'ajoutent pas à ton objectif.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                else -> Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Calories actives : indicatives, elles ne s'ajoutent pas à l'objectif (docs/decisions.md).
+                    WatchStat("Calories", day.activeKcal?.let { formatThousands(it) }, "kcal", Modifier.weight(1f))
+                    WatchStat("Pas", formatThousands(day.steps.toInt()), null, Modifier.weight(1f))
+                    // La distance du jour arrive avec le lot 4 (Santé) : « – » d'ici là.
+                    WatchStat("Distance", null, "km", Modifier.weight(1f))
+                    WatchStat("Cœur", day.avgBpm?.toString(), "bpm", Modifier.weight(1f))
                 }
-            }
-            day?.sleepMin?.let {
-                Text("Nuit : ${durationText(it)} de sommeil", style = MaterialTheme.typography.bodyMedium)
-            }
-            if (day != null && day.hasHeart) {
-                Text(
-                    "Cœur : ${day.avgBpm} battements par minute en moyenne, ${day.minBpm} au plus bas.",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
             }
             if (state.proposals.isNotEmpty()) {
                 Text("Séances à ajouter à ton journal", style = MaterialTheme.typography.titleSmall)
@@ -79,6 +58,25 @@ fun WatchCard(state: WatchUiState, onAdd: (WatchSession) -> Unit, onIgnore: (Wat
                 }
             }
         }
+    }
+}
+
+/** Une mesure de la montre : valeur en gros, nom dessous ; « – » quand elle manque. */
+@Composable
+private fun WatchStat(label: String, value: String?, unit: String?, modifier: Modifier = Modifier) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            value ?: "–",
+            style = MaterialTheme.typography.titleLarge,
+            color = if (value == null) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
+            maxLines = 1,
+        )
+        Text(
+            if (value != null && unit != null) "$label ($unit)" else label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+        )
     }
 }
 

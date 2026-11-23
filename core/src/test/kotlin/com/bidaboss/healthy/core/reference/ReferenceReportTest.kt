@@ -83,12 +83,15 @@ class ReferenceReportTest {
     }
 
     @Test
-    fun `les pas montrent la tendance sans zone et le sommeil son texte`() {
+    fun `les pas ont une zone indicative non officielle et le sommeil son texte`() {
         val report = ReferenceReports.build(List(7) { day(sleep = 410, steps = 8400) }, 75.0, man)
         val sleep = line(report, ReferenceId.SLEEP)!!
         val steps = line(report, ReferenceId.STEPS)!!
-        assertEquals(ReferencePosition.TREND, steps.position)
-        assertNull(steps.zoneStart)
+        assertEquals(ReferencePosition.IN, steps.position)
+        assertEquals(ReferenceStatus.INDICATIVE, steps.reference.status)
+        assertEquals(ReferencePosition.BELOW, line(ReferenceReports.build(List(7) { day(steps = 5000) }, 75.0, man), ReferenceId.STEPS)!!.position)
+        assertEquals(ReferencePosition.ABOVE, line(ReferenceReports.build(List(7) { day(steps = 12000) }, 75.0, man), ReferenceId.STEPS)!!.position)
+        assertNull(line(ReferenceReports.build(List(7) { day() }, 75.0, man), ReferenceId.STEPS))
         assertEquals("6 h 50", sleep.valueText)
         assertEquals(ReferencePosition.BELOW, sleep.position)
     }
@@ -154,9 +157,10 @@ class ReferenceReportTest {
         assertEquals(20.0, References.of(ReferenceId.FAT).min!!, absoluteTolerance = 0.0)
         assertEquals(35.0, References.of(ReferenceId.FAT).max!!, absoluteTolerance = 0.0)
         assertEquals(7.0, References.of(ReferenceId.SLEEP).min!!, absoluteTolerance = 0.0)
-        // Le calcul des calories reste le choix de l'app ; les pas n'ont pas de source.
+        // Le calcul des calories reste le choix de l'app ; les pas ont une zone indicative sans source.
         assertEquals(ReferenceStatus.APP_GOAL, References.of(ReferenceId.CALORIES).status)
-        assertEquals(ReferenceKind.TREND, References.of(ReferenceId.STEPS).kind)
+        assertEquals(ReferenceKind.RANGE, References.of(ReferenceId.STEPS).kind)
+        assertEquals(ReferenceStatus.INDICATIVE, References.of(ReferenceId.STEPS).status)
         assertTrue(References.catalog.all { it.url == null })
         // Sodium, aliments par groupe et sucres : dans la table, jamais affichés (l'app ne les mesure pas).
         val unmeasurable = References.catalog.filter { !it.measurable }

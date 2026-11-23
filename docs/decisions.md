@@ -253,7 +253,8 @@ Validées par le propriétaire avec le fil Design (13/11/2026), ordre conseillé
   sommeil 7 h minimum de 18 à 64 ans (Santé publique France). L'eau officielle **inclut l'eau des aliments** : la ligne le dit
   (« plus large que l'eau notée »). Les objectifs de l'app (maintien, protéines 1,6 g/kg, fibres 30 g, eau du jour) sont étiquetés
   « Objectif de l'app », lus à côté du repère officiel et jamais confondus avec lui.
-- **Sans source** : les pas (tendance seule, sans zone ; statut « à confirmer »). Le sommeil hors 18 à 64 ans passe aussi en tendance.
+- **Sans source** : les pas ont une zone **indicative** de 7 000 à 10 000 par jour (choix du propriétaire, 23/11/2026), écrite « indicatif, non officiel » ;
+  la ligne n'existe que si la montre donne des pas. Le sommeil hors 18 à 64 ans passe en tendance seule.
   Sodium (2 g), sucres, graisses saturées et repères de Santé publique France par aliment (fruits et légumes, laitiers, poisson...)
   sont dans la table mais **masqués** : l'app ne les mesure pas, et rien n'est jamais affiché à zéro. Les adresses des sources
   ne sont pas encore renseignées (`url` vide), à relire.

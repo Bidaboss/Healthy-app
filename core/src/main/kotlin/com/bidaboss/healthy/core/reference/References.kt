@@ -8,6 +8,7 @@ import kotlin.math.roundToInt
 enum class ReferenceStatus(val label: String) {
     VERIFIED("vérifié"),
     TO_CONFIRM("à confirmer"),
+    INDICATIVE("indicatif, non officiel"),
     APP_GOAL("Objectif de l'app"),
 }
 
@@ -102,10 +103,11 @@ object References {
             note = "Hors de 18 à 64 ans, l'app montre ta tendance sans zone.",
         ),
         Reference(
-            ReferenceId.STEPS, "Pas", "/jour", ReferenceKind.TREND,
-            rule = "pas de repère officiel trouvé",
-            source = "Aucun repère officiel en pas par jour trouvé : l'app montre ta tendance, sans zone.",
-            status = ReferenceStatus.TO_CONFIRM, measurable = true,
+            ReferenceId.STEPS, "Pas", "/jour", ReferenceKind.RANGE, min = 7000.0, max = 10000.0,
+            rule = "7 000 à 10 000 pas par jour (indicatif)",
+            source = "Aucun repère officiel en pas par jour : zone indicative choisie par le propriétaire, non officielle.",
+            status = ReferenceStatus.INDICATIVE, measurable = true,
+            note = "Visible seulement si la montre est connectée.",
         ),
         // Repères lus à la source mais que l'app ne peut pas mesurer (elle ne note ni le sodium ni les aliments par groupe) : non affichés.
         other("Sodium", "2 g par jour (environ 5 g de sel)", EFSA),
@@ -273,7 +275,8 @@ object ReferenceReports {
         val stepDays = days.mapNotNull { it.steps }
         if (stepDays.isNotEmpty()) {
             val avg = stepDays.average()
-            lines += trend(References.of(ReferenceId.STEPS), avg, "${grouped(avg)} pas")
+            val ref = References.of(ReferenceId.STEPS)
+            lines += lineWithZone(ref, avg, "${grouped(avg)} pas", ref.rule, ref.min!!, ref.max)
         }
 
         return ReferenceReport(period, lines, indicative, profileMissing = profile == null || weightKg == null)

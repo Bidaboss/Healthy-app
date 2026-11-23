@@ -127,9 +127,8 @@ class HydrationTest {
         // Un verre de 25 cL s'affichait « 0,3 L » (retour du propriétaire, 12/11/2026).
         assertEquals("25 cL", Hydration.formatLiters(250))
         assertEquals("20 cL", Hydration.formatLiters(Hydration.GLASS_ML))
-        assertEquals("12 cL", Hydration.formatLiters(Hydration.COFFEE_ML))
-        assertEquals("15 cL", Hydration.formatLiters(Hydration.SMALL_CUP_ML))
-        assertEquals("25 cL", Hydration.formatLiters(Hydration.LARGE_CUP_ML))
+        assertEquals("15 cL", Hydration.formatLiters(Hydration.COFFEE_ML))
+        assertEquals("25 cL", Hydration.formatLiters(Hydration.TEA_ML))
         assertEquals("99 cL", Hydration.formatLiters(994))
         assertEquals("1 L", Hydration.formatLiters(997))
         assertEquals("75 cL", Hydration.formatLiters(750))

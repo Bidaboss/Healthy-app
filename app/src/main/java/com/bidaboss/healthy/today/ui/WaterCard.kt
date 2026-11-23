@@ -18,8 +18,7 @@ import com.bidaboss.healthy.ui.WaterFeedback
 import kotlin.math.roundToInt
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -43,7 +42,6 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /** Carte « Eau » d'Aujourd'hui : progression et ajouts rapides. */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WaterCard(state: WaterUiState, onAdd: (Int) -> Unit, onUndo: () -> Unit, onOpen: () -> Unit) {
     val context = LocalContext.current
@@ -91,28 +89,31 @@ fun WaterCard(state: WaterUiState, onAdd: (Int) -> Unit, onUndo: () -> Unit, onO
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            // Cinq boutons : retour à la ligne selon la largeur de l'écran.
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                FilledTonalButton(colors = healthyTonalButtonColors(), onClick = { add(Hydration.GLASS_ML) }) {
-                    Text("+ verre ${Hydration.formatLiters(Hydration.GLASS_ML)}")
-                }
-                FilledTonalButton(colors = healthyTonalButtonColors(), onClick = { add(Hydration.COFFEE_ML) }) {
-                    Text("+ café ${Hydration.formatLiters(Hydration.COFFEE_ML)}")
-                }
-                FilledTonalButton(colors = healthyTonalButtonColors(), onClick = { add(Hydration.SMALL_CUP_ML) }) {
-                    Text("+ petite tasse ${Hydration.formatLiters(Hydration.SMALL_CUP_ML)}")
-                }
-                FilledTonalButton(colors = healthyTonalButtonColors(), onClick = { add(Hydration.LARGE_CUP_ML) }) {
-                    Text("+ grande tasse ${Hydration.formatLiters(Hydration.LARGE_CUP_ML)}")
-                }
-                FilledTonalButton(colors = healthyTonalButtonColors(), onClick = { add(Hydration.BOTTLE_ML) }) {
-                    Text("+ bouteille ${Hydration.formatLiters(Hydration.BOTTLE_ML)}")
-                }
+            // Quatre boutons de même largeur : un appui ajoute la quantité (refonte d'Aujourd'hui, 23/11/2026).
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                DrinkButton("Verre", Hydration.GLASS_ML, add, Modifier.weight(1f))
+                DrinkButton("Café", Hydration.COFFEE_ML, add, Modifier.weight(1f))
+                DrinkButton("Thé", Hydration.TEA_ML, add, Modifier.weight(1f))
+                DrinkButton("Bouteille", Hydration.BOTTLE_ML, add, Modifier.weight(1f))
             }
             if (state.todayIntakes.isNotEmpty()) TextButton(onClick = onUndo) { Text("Annuler le dernier ajout") }
+        }
+    }
+}
+
+/** Un bouton d'ajout rapide : le nom au-dessus, la quantité dessous. */
+@Composable
+private fun DrinkButton(name: String, ml: Int, onAdd: (Int) -> Unit, modifier: Modifier = Modifier) {
+    val amount = Hydration.formatLiters(ml)
+    FilledTonalButton(
+        colors = healthyTonalButtonColors(),
+        onClick = { onAdd(ml) },
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+        modifier = modifier.semantics { contentDescription = "Ajouter $name $amount" },
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(name, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+            Text(amount, style = MaterialTheme.typography.labelSmall, maxLines = 1)
         }
     }
 }

@@ -71,7 +71,11 @@ class WaterRepositoryTest {
     @Test
     fun `nom du bouton retrouve depuis la quantite`() {
         assertEquals("Verre", Hydration.quickLabel(200))
-        assertEquals("Grande tasse", Hydration.quickLabel(250))
+        assertEquals("Thé", Hydration.quickLabel(250))
+        assertEquals("Café", Hydration.quickLabel(150))
+        // Un café noté avant la refonte (12 cL) garde son nom.
+        assertEquals("Café", Hydration.quickLabel(120))
+        assertEquals("Bouteille", Hydration.quickLabel(500))
         assertEquals(null, Hydration.quickLabel(330))
     }
 

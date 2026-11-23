@@ -14,7 +14,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -33,8 +35,6 @@ import com.bidaboss.healthy.settings.data.PousseStageStore
 import com.bidaboss.healthy.ui.Pousse
 import com.bidaboss.healthy.ui.StreakFlame
 import com.bidaboss.healthy.ui.ThemeTexts
-import com.bidaboss.healthy.ui.headerPattern
-import com.bidaboss.healthy.ui.theme.HealthyTheme
 import com.bidaboss.healthy.workout.data.WorkoutLogRepository
 import com.bidaboss.healthy.workout.data.WorkoutRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -116,44 +116,45 @@ class HeaderViewModel(
 
 private val dayFormat = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.FRENCH)
 
+/** Ombre douce des textes posés sur la photo (comme [PhotoTitle]). */
+private val photoShadow = Shadow(color = Color.Black.copy(alpha = 0.55f), offset = Offset(0f, 2f), blurRadius = 12f)
+
+/** En-tête posé sur le fond photo d'Aujourd'hui : Pousse, le bonjour et la série, en blanc avec ombre. */
 @Composable
 fun TodayHeader(state: HeaderUiState, onOpenBadges: () -> Unit, modifier: Modifier = Modifier) {
-    val ambiance = HealthyTheme.ambiance
     val texts = ThemeTexts.current
+    val white = Color.White
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-            .background(ambiance.header)
-            .headerPattern()
-            .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 24.dp),
+            .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 24.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Pousse(state.mood, growth = state.growth)
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             texts.dayTitle?.let {
-                Text(it, color = ambiance.onHeader, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                Text(it, color = white, style = MaterialTheme.typography.labelLarge.copy(shadow = photoShadow), fontWeight = FontWeight.Bold)
             }
             Text(
                 state.date.format(dayFormat).replaceFirstChar { it.titlecase(Locale.FRENCH) },
-                color = ambiance.onHeader.copy(alpha = 0.9f),
-                style = MaterialTheme.typography.labelLarge,
+                color = white.copy(alpha = 0.92f),
+                style = MaterialTheme.typography.labelLarge.copy(shadow = photoShadow),
             )
             Text(
                 texts.greeting(state.firstName),
-                color = ambiance.onHeader,
-                style = MaterialTheme.typography.headlineSmall,
+                color = white,
+                style = MaterialTheme.typography.headlineSmall.copy(shadow = photoShadow),
                 fontWeight = FontWeight.Black,
             )
             Text(
                 texts.headerMessage(state.mood, state.mealCount),
-                color = ambiance.onHeader,
-                style = MaterialTheme.typography.bodyLarge,
+                color = white,
+                style = MaterialTheme.typography.bodyLarge.copy(shadow = photoShadow),
                 fontWeight = FontWeight.SemiBold,
             )
             if (state.streakHint.isNotEmpty()) {
-                Text(state.streakHint, color = ambiance.onHeader.copy(alpha = 0.9f), style = MaterialTheme.typography.bodySmall)
+                Text(state.streakHint, color = white.copy(alpha = 0.92f), style = MaterialTheme.typography.bodySmall.copy(shadow = photoShadow))
             }
         }
         StreakBadge(state.streakWeeks, texts, onOpenBadges)

@@ -9,19 +9,19 @@ object Hydration {
     const val PER_KG_ML = 30
     const val PER_SESSION_ML = 500
     const val GLASS_ML = 200
-    /** Un café de machine automatique d'entreprise (gobelet standard, environ 12 cL). */
-    const val COFFEE_ML = 120
+    /** Un café : 15 cL (refonte d'Aujourd'hui, 23/11/2026). */
+    const val COFFEE_ML = 150
+    /** Un thé : 25 cL, une grande tasse. */
+    const val TEA_ML = 250
     const val BOTTLE_ML = 500
-    /** Tasses du petit-déjeuner (demande du propriétaire, 13/11/2026) : petite tasse et grand mug ou bol. */
-    const val SMALL_CUP_ML = 150
-    const val LARGE_CUP_ML = 250
+    /** Ancien café de machine (12 cL), gardé pour nommer les ajouts déjà notés. */
+    private const val OLD_COFFEE_ML = 120
 
     /** Nom du bouton rapide qui ajoute cette quantité, ou null pour une quantité libre. */
     fun quickLabel(ml: Int): String? = when (ml) {
         GLASS_ML -> "Verre"
-        COFFEE_ML -> "Café"
-        SMALL_CUP_ML -> "Petite tasse"
-        LARGE_CUP_ML -> "Grande tasse"
+        COFFEE_ML, OLD_COFFEE_ML -> "Café"
+        TEA_ML -> "Thé"
         BOTTLE_ML -> "Bouteille"
         else -> null
     }

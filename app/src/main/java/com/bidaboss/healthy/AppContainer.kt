@@ -23,6 +23,7 @@ import com.bidaboss.healthy.meals.data.ScannedProductRepository
 import com.bidaboss.healthy.settings.data.AppearanceStore
 import com.bidaboss.healthy.settings.data.MotivationRepository
 import com.bidaboss.healthy.settings.data.MotivationStore
+import com.bidaboss.healthy.settings.data.PousseStageStore
 import com.bidaboss.healthy.settings.data.WaterReminderStore
 import com.bidaboss.healthy.settings.reminder.MotivationScheduler
 import com.bidaboss.healthy.settings.reminder.WaterReminderScheduler
@@ -77,6 +78,7 @@ class AppContainer(context: Context) {
     val reminderScheduler = SessionReminderScheduler(context.applicationContext)
     val appearance = AppearanceStore(context)
     val motivationStore = MotivationStore(context)
+    val pousseStageStore = PousseStageStore(context)
     val motivationScheduler = MotivationScheduler(context.applicationContext)
     val waterReminderStore = WaterReminderStore(context)
     val waterReminderScheduler = WaterReminderScheduler(context.applicationContext)

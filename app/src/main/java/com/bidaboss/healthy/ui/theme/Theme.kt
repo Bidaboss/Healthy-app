@@ -14,7 +14,7 @@ import com.bidaboss.healthy.settings.data.AppTheme
 
 // Palette fixe « vert frais » : identique sur tous les téléphones (pas de couleurs dynamiques).
 internal val LightColors = lightColorScheme(
-    primary = Color(0xFF2E7D32),
+    primary = Color(0xFF1F7A47),
     onPrimary = Color(0xFFFFFFFF),
     primaryContainer = Color(0xFFB7F0B1),
     onPrimaryContainer = Color(0xFF002204),
@@ -27,12 +27,12 @@ internal val LightColors = lightColorScheme(
     onTertiary = Color(0xFFFFFFFF),
     tertiaryContainer = Color(0xFFBCEBF0),
     onTertiaryContainer = Color(0xFF002023),
-    background = Color(0xFFF6FBF4),
-    onBackground = Color(0xFF181D17),
-    surface = Color(0xFFF6FBF4),
-    onSurface = Color(0xFF181D17),
-    surfaceVariant = Color(0xFFDEE5D9),
-    onSurfaceVariant = Color(0xFF424940),
+    background = Color(0xFFF3FAF5),
+    onBackground = Color(0xFF17301F),
+    surface = Color(0xFFF3FAF5),
+    onSurface = Color(0xFF17301F),
+    surfaceVariant = Color(0xFFD3EEDC),
+    onSurfaceVariant = Color(0xFF44584B),
     outline = Color(0xFF72796F),
     error = Color(0xFFBA1A1A),
     onError = Color(0xFFFFFFFF),
@@ -104,11 +104,11 @@ internal val PirateLightColors = lightColorScheme(
     errorContainer = Color(0xFFFFDAD6),
     onErrorContainer = Color(0xFF410002),
     // Cartes en parchemin plus clair, posées sur le fond parchemin.
-    surfaceContainerLowest = Color(0xFFFCF7EC),
+    surfaceContainerLowest = Color(0xFFFBF4E4),
     surfaceContainerLow = Color(0xFFF0E3C8),
     surfaceContainer = Color(0xFFEBDDBF),
     surfaceContainerHigh = Color(0xFFE5D6B6),
-    surfaceContainerHighest = Color(0xFFFCF7EC),
+    surfaceContainerHighest = Color(0xFFFBF4E4),
 )
 
 internal val PirateDarkColors = darkColorScheme(

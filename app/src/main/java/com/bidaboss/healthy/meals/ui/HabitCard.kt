@@ -1,4 +1,4 @@
-package com.bidaboss.healthy.today.ui
+package com.bidaboss.healthy.meals.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

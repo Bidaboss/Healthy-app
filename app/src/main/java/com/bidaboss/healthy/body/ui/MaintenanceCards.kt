@@ -27,7 +27,7 @@ import com.bidaboss.healthy.ui.formatThousands
 import java.util.Locale
 
 /**
- * Carte d'Aujourd'hui : l'app propose un maintien plus juste, sans rien changer seule.
+ * Carte de Moi : l'app propose un maintien plus juste, sans rien changer seule.
  * Pas de notification, pas de couleur de jugement.
  */
 @Composable

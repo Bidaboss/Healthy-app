@@ -67,10 +67,15 @@ fun MeScreen(
     viewModel: MeViewModel = viewModel(
         factory = healthyViewModelFactory { MeViewModel(it.bodyRepository, it.maintenanceKcal, it.maintenanceInfo, it.meProgress) },
     ),
+    maintenanceViewModel: MaintenanceViewModel = viewModel(
+        factory = healthyViewModelFactory { MaintenanceViewModel(it.maintenanceInfo, it.bodyRepository) },
+    ),
 ) {
+    val maintenance by maintenanceViewModel.uiState.collectAsStateWithLifecycle()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LifecycleResumeEffect(Unit) {
         viewModel.onResume()
+        maintenanceViewModel.onResume()
         onPauseOrDispose { }
     }
     Column(
@@ -84,6 +89,8 @@ fun MeScreen(
             }
         }
         ProfileCard(state, onOpenProfile)
+        // La proposition d'ajuster le maintien (avant la refonte sur Aujourd'hui) : visible seulement quand il y en a une.
+        MaintenanceCard(maintenance.info, onOpenDetail = onOpenProfile, onLater = maintenanceViewModel::later)
         WeightCard(state, onOpenWeight, onAdd = viewModel::openWeighIn)
         BadgesCard(state, onOpenBadges)
     }

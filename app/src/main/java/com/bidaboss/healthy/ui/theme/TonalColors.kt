@@ -29,19 +29,20 @@ internal fun tonalColorsOf(theme: AppTheme, dark: Boolean): TonalColors {
     }
 }
 
+/** Couleurs tonales du thème en cours (boutons de boisson, pastilles). */
 @Composable
-private fun tonalColors(): TonalColors = tonalColorsOf(HealthyTheme.ambiance.theme, isSystemInDarkTheme())
+fun healthyTonalColors(): TonalColors = tonalColorsOf(HealthyTheme.ambiance.theme, isSystemInDarkTheme())
 
 /** Couleurs d'un FilledTonalButton de l'app. */
 @Composable
 fun healthyTonalButtonColors(): ButtonColors {
-    val c = tonalColors()
+    val c = healthyTonalColors()
     return ButtonDefaults.filledTonalButtonColors(containerColor = c.container, contentColor = c.content)
 }
 
 /** Couleurs d'un FilledTonalIconButton de l'app. */
 @Composable
 fun healthyTonalIconButtonColors(): IconButtonColors {
-    val c = tonalColors()
+    val c = healthyTonalColors()
     return IconButtonDefaults.filledTonalIconButtonColors(containerColor = c.container, contentColor = c.content)
 }

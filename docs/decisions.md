@@ -450,14 +450,20 @@ Cette section est tenue à jour par chaque lot, dans son emplacement.
   dessus en blanc avec ombre douce, les cartes sont opaques à coins de 28 dp.
 - **Ordre des cartes** : calories (anneau neutre le jour en cours, 4 barres de macros), Eau, Ma montre (si
   montre connectée), Séance du jour, bilan de la semaine (carte « prêt » du dimanche soir au mardi ; il s'ouvre
-  aussi tout seul le lundi). Les cartes d'avant la refonte (maintien, repas habituel, 7 derniers jours, Mon
-  poids) restent en dessous jusqu'au lot 4, qui les met dans Santé et Moi.
+  aussi tout seul le lundi). Les cartes d'avant la refonte ont quitté Aujourd'hui (retouches du 23/11/2026) :
+  « Mon poids » et « 7 derniers jours » existent déjà dans Moi et Santé (7 jours), donc supprimées ici ; la
+  proposition « Mon maintien » est dans Moi, sous le profil, visible seulement quand il y en a une ; « Ton
+  repas habituel ? » est dans Repas, sous la carte d'import, le jour même seulement.
 - **Eau** : 4 boutons de même largeur (Verre 20 cL, Café 15 cL, Thé 25 cL, Bouteille 50 cL), un appui ajoute,
-  avec la vibration et le verre animé déjà prévus. Le café, le thé et les boissons sans alcool des repas comptent
+  avec la vibration. Carte allégée comme le prototype (retouches du 23/11/2026) : titre et total, barre, quatre
+  boutons à icône ; « Annuler : Verre 20 cL à 08:05 » reste sous les boutons (il dit aussi le dernier ajout) ; le
+  détail de l'eau s'ouvre en touchant le titre. Le café, le thé et les boissons sans alcool des repas comptent
   dans l'eau (règle `drink`, voir « Eau »). Le café du widget passe aussi à 15 cL.
-- **Ma montre** : calories brûlées, pas, distance et cœur moyen en quatre mesures ; un appui ouvre l'écran Ma
+- **Ma montre** : calories brûlées, pas, distance et cœur moyen en quatre tuiles à pastille d'icône colorée,
+  grille 2 x 2 ; un appui ouvre l'écran Ma
   montre (Santé). La carte est masquée sans montre connectée. La distance affiche « – » tant que le lot 4 ne la
   fournit pas. Les séances à ajouter au journal restent proposées dans la carte.
+- **Palette Classique** (retouches du 23/11/2026, prototype) : fond F3FAF5, primaire 1F7A47, accent corail FF8A65.
 - Aucune table, aucune migration.
 
 ### Lot 2 : Repas (livré, base v15)

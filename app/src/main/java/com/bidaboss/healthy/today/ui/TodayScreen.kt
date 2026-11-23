@@ -42,8 +42,6 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bidaboss.healthy.core.body.Band
-import com.bidaboss.healthy.body.ui.MaintenanceCard
-import com.bidaboss.healthy.body.ui.MaintenanceViewModel
 import com.bidaboss.healthy.core.body.Maintenance
 import com.bidaboss.healthy.ui.EmptyState
 import com.bidaboss.healthy.ui.PhotoBackground
@@ -64,7 +62,6 @@ import kotlin.math.roundToInt
 fun TodayScreen(
     onStartSession: (sessionId: Long, durationMin: Int) -> Unit,
     onOpenProfile: () -> Unit,
-    onOpenWeight: () -> Unit,
     onOpenWater: () -> Unit,
     onOpenBadges: () -> Unit,
     onOpenWeeklyRecap: () -> Unit,
@@ -84,12 +81,6 @@ fun TodayScreen(
     watchViewModel: WatchViewModel = viewModel(
         factory = healthyViewModelFactory { WatchViewModel(it.watchRepository, it.workoutLogRepository) },
     ),
-    habitViewModel: HabitViewModel = viewModel(
-        factory = healthyViewModelFactory { HabitViewModel(it.mealRepository, it.habitDismissStore) },
-    ),
-    maintenanceViewModel: MaintenanceViewModel = viewModel(
-        factory = healthyViewModelFactory { MaintenanceViewModel(it.maintenanceInfo, it.bodyRepository) },
-    ),
     recapViewModel: WeeklyRecapViewModel = viewModel(
         factory = healthyViewModelFactory { WeeklyRecapViewModel(it.weeklyRecapRepository, it.weeklyRecapStore) },
     ),
@@ -98,8 +89,6 @@ fun TodayScreen(
     val water by waterViewModel.uiState.collectAsStateWithLifecycle()
     val header by headerViewModel.uiState.collectAsStateWithLifecycle()
     val watch by watchViewModel.uiState.collectAsStateWithLifecycle()
-    val habit by habitViewModel.uiState.collectAsStateWithLifecycle()
-    val maintenance by maintenanceViewModel.uiState.collectAsStateWithLifecycle()
     val recapWeek by recapViewModel.availableWeek.collectAsStateWithLifecycle()
     val autoOpenRecap by recapViewModel.autoOpen.collectAsStateWithLifecycle()
     var choosingDuration by remember { mutableStateOf(false) }
@@ -110,8 +99,6 @@ fun TodayScreen(
         headerViewModel.onResume()
         recapViewModel.refresh()
         watchViewModel.onResume()
-        habitViewModel.onResume()
-        maintenanceViewModel.onResume()
         onPauseOrDispose { }
     }
 
@@ -139,12 +126,6 @@ fun TodayScreen(
                     WatchCard(watch, onAdd = watchViewModel::add, onIgnore = watchViewModel::ignore, onOpen = onOpenWatch)
                     TodaySessionCard(state, onStart = { choosingDuration = true })
                     if (recapWeek != null) WeeklyRecapCard(onOpenWeeklyRecap)
-
-                    // Cartes d'avant la refonte : le lot 4 les met dans Santé (7 jours) et Moi (poids).
-                    MaintenanceCard(maintenance.info, onOpenDetail = onOpenProfile, onLater = maintenanceViewModel::later)
-                    HabitCard(habit.suggestion, onAdd = habitViewModel::add, onDismiss = habitViewModel::dismiss)
-                    if (state.maintenanceKcal != null) WeekCard(state)
-                    WeightCard(state, onOpenWeight)
                 }
             }
         }
@@ -310,86 +291,6 @@ private fun CaloriesCard(state: TodayUiState, onOpenProfile: () -> Unit) {
         }
     }
 }
-
-/** Les 7 derniers jours en barres colorées, avec la moyenne des jours notés. */
-@Composable
-private fun WeekCard(state: TodayUiState) {
-    val maintenance = state.maintenanceKcal ?: return
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("7 derniers jours", style = MaterialTheme.typography.titleMedium)
-            val average = state.averageKcal
-            if (average == null) {
-                Text("Pas encore de repas notés cette semaine.")
-            } else {
-                Text(
-                    "Moyenne : ${average.roundToInt()} kcal par jour",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = state.averageBand?.color() ?: MaterialTheme.colorScheme.onSurface,
-                )
-                state.averageBand?.let { band ->
-                    Text(
-                        bandLabel(band, average, maintenance).replaceFirstChar(Char::uppercase) +
-                            ThemeTexts.current.onTarget?.takeIf { band == Band.GREEN }?.let { " · $it" }.orEmpty(),
-                    )
-                }
-            }
-            val top = maxOf(maintenance * 1.3, state.lastDays.maxOfOrNull { it.kcal } ?: 0.0)
-            val empty = MaterialTheme.colorScheme.surfaceVariant
-            val targetLine = MaterialTheme.colorScheme.onSurfaceVariant
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(72.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.Bottom,
-            ) {
-                state.lastDays.forEach { day ->
-                    val barColor = day.band?.color() ?: empty
-                    Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Canvas(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f),
-                        ) {
-                            val h = (day.kcal / top * size.height).toFloat().coerceAtLeast(if (day.kcal > 0) 4f else 2f)
-                            drawRect(barColor, topLeft = Offset(0f, size.height - h), size = Size(size.width, h))
-                            val y = (size.height - maintenance / top * size.height).toFloat()
-                            drawLine(targetLine, Offset(0f, y), Offset(size.width, y), strokeWidth = 2f)
-                        }
-                        Text(dayName(day.date.dayOfWeek.value).take(1), style = MaterialTheme.typography.labelSmall)
-                    }
-                }
-            }
-            Text(
-                "Le trait marque ton maintien. Un jour sans repas noté ne compte pas dans la moyenne.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-private fun WeightCard(state: TodayUiState, onOpenWeight: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Mon poids", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    state.latestWeightKg?.let { "Dernière pesée : ${formatKg(it)}" } ?: "Aucune pesée pour l'instant.",
-                )
-            }
-            if (state.weighedToday) {
-                OutlinedButton(onClick = onOpenWeight) { Text("Voir") }
-            } else {
-                Button(onClick = onOpenWeight) { Text("Me peser") }
-            }
-        }
-    }
-}
-
-private fun formatKg(kg: Double): String = "${(Math.round(kg * 10) / 10.0).toString().replace('.', ',').removeSuffix(",0")} kg"
 
 /** Du dimanche soir au mardi : rappel du bilan de la semaine. */
 @Composable

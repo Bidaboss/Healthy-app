@@ -1,4 +1,4 @@
-package com.bidaboss.healthy.today.ui
+package com.bidaboss.healthy.meals.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
-/** Carte « Ton petit-déjeuner habituel ? » d'Aujourd'hui : null s'il n'y a rien de fiable à proposer. */
+/** Carte « Ton petit-déjeuner habituel ? » des Repas : null s'il n'y a rien de fiable à proposer. */
 data class HabitUiState(val suggestion: HabitualMeal? = null)
 
 /**

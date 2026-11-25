@@ -131,7 +131,7 @@ fun RouteEditorScreen(
     modifier: Modifier = Modifier,
     viewModel: RouteEditorViewModel = viewModel(
         key = "route-editor-$routeId",
-        factory = healthyViewModelFactory { RouteEditorViewModel(it.savedRouteRepository, routeId) },
+        factory = healthyViewModelFactory { RouteEditorViewModel(it.savedRouteRepository, routeId, logRepository = it.workoutLogRepository) },
     ),
 ) {
     val s by viewModel.state.collectAsStateWithLifecycle()
@@ -198,6 +198,13 @@ fun RouteEditorScreen(
         )
         Button(onClick = viewModel::save, enabled = s.canSave, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
             Text("Enregistrer")
+        }
+        if (routeId == null && s.distanceKm != null) {
+            Text(
+                "Un nouveau trajet compte aussi comme une sortie à vélo aujourd'hui (aller-retour). Tu peux la modifier dans Sport.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         if (s.distanceKm == null) {
             Text(

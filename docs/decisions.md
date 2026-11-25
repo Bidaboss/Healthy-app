@@ -549,6 +549,10 @@ Cette section est tenue à jour par chaque lot, dans son emplacement.
 - **Ajouter ce trajet** : Aller, Retour ou Aller-retour (par défaut), en un appui. Distance = un sens, ou le double ;
   durée estimée à 15 km/h (vélo), 5 km/h (marche), 10 km/h (course), modifiable ensuite par « Modifier ». L'activité
   garde une copie du nom du trajet, du sens et de la distance : supprimer ou changer un trajet ne change pas le journal.
+- **Nouveau trajet = sortie à vélo** (demande du propriétaire, 25/11/2026) : enregistrer un **nouveau** trajet qui a une distance ajoute
+  aussi une activité Vélo aujourd'hui, en aller-retour, durée estimée à 15 km/h, avec le nom, le sens et la distance ; elle compte
+  comme toute activité (Sport, série, Aujourd'hui, Santé, repères) et se modifie ou se supprime dans Sport. Une modification de
+  trajet, ou un trajet sans distance, n'ajoute rien. Une phrase l'annonce sous « Enregistrer ».
 - Base v16 : table `saved_routes`, colonnes `route_id`, `route_name`,
   `route_direction` et `distance_km` sur `activities`.
 

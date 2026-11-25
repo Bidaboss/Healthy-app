@@ -2,7 +2,10 @@ package com.bidaboss.healthy.workout.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bidaboss.healthy.core.route.RouteDirection
 import com.bidaboss.healthy.core.route.RoutePlanning
+import com.bidaboss.healthy.workout.data.RouteUse
+import com.bidaboss.healthy.workout.data.WorkoutLogRepository
 import com.bidaboss.healthy.workout.data.route.DistanceResult
 import com.bidaboss.healthy.workout.data.route.RouteFailure
 import com.bidaboss.healthy.workout.data.route.SavedRoute
@@ -15,6 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 /** Écran « Mes trajets » : la liste et la suppression. */
 class RoutesViewModel(private val repository: SavedRouteRepository) : ViewModel() {
@@ -54,6 +58,9 @@ class RouteEditorViewModel(
     private val repository: SavedRouteRepository,
     private val routeId: Long?,
     private val now: () -> Long = { System.currentTimeMillis() },
+    /** Si présent, un nouveau trajet à vélo compte aussi comme une activité sportive du jour (demande du propriétaire, 25/11/2026). */
+    private val logRepository: WorkoutLogRepository? = null,
+    private val today: () -> LocalDate = { LocalDate.now() },
 ) : ViewModel() {
     private val _state = MutableStateFlow(RouteEditorState(loading = routeId != null))
     val state: StateFlow<RouteEditorState> = _state.asStateFlow()
@@ -137,8 +144,22 @@ class RouteEditorViewModel(
                 manualKm = s.distanceKm.takeIf { !s.distanceCalculated },
                 nowEpochMs = now(),
             )
-            if (id != null) _state.update { it.copy(saved = true) }
+            if (id != null) {
+                // Un nouveau trajet avec une distance = une sortie à vélo aller-retour aujourd'hui, durée estimée à 15 km/h.
+                val oneWay = s.distanceKm
+                if (routeId == null && oneWay != null && logRepository != null) {
+                    val direction = RouteDirection.ROUND_TRIP
+                    val km = direction.distanceKm(oneWay)
+                    val minutes = RoutePlanning.estimateMinutes(km, ROUTE_BIKE_KMH).coerceIn(1, WorkoutLogRepository.MAX_ACTIVITY_MINUTES)
+                    logRepository.addActivity("Vélo", minutes, today(), now(), route = RouteUse(id, s.name.trim(), direction, km))
+                }
+                _state.update { it.copy(saved = true) }
+            }
         }
+    }
+
+    private companion object {
+        const val ROUTE_BIKE_KMH = 15.0
     }
 
     private fun plain(km: Double) = km.toString().removeSuffix(".0")
